@@ -1,4 +1,3 @@
-// src/components/CalendarPage.js
 import React, { useState } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
@@ -10,43 +9,46 @@ moment.locale('zh-cn');
 const localizer = momentLocalizer(moment);
 
 const CalendarPage = () => {
-  // 状态管理
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState('month');
   
-  // 模拟事件数据
-  const [events] = useState([
+  // 修复：使用当前日期的事件数据
+  const currentYear = new Date().getFullYear(); // 2025
+  const currentMonth = new Date().getMonth();   // 9 (10月)
+  const currentDay = new Date().getDate();      // 当前日期
+  
+  const [events, setEvents] = useState([
     {
       id: 1,
       title: '团队周会',
-      start: new Date(2024, 0, 15, 10, 0),
-      end: new Date(2024, 0, 15, 11, 30),
+      start: new Date(currentYear, currentMonth, currentDay, 10, 0),     // 今天10:00
+      end: new Date(currentYear, currentMonth, currentDay, 11, 30),      // 今天11:30
       type: 'work'
     },
     {
       id: 2,
       title: '项目评审',
-      start: new Date(2024, 0, 16, 14, 0),
-      end: new Date(2024, 0, 16, 16, 0),
+      start: new Date(currentYear, currentMonth, currentDay + 1, 14, 0), // 明天14:00
+      end: new Date(currentYear, currentMonth, currentDay + 1, 16, 0),   // 明天16:00
       type: 'meeting'
     },
     {
       id: 3,
       title: '健身训练',
-      start: new Date(2024, 0, 17, 18, 0),
-      end: new Date(2024, 0, 17, 19, 0),
+      start: new Date(currentYear, currentMonth, currentDay, 18, 0),     // 今天18:00
+      end: new Date(currentYear, currentMonth, currentDay, 19, 0),       // 今天19:00
       type: 'personal'
     },
     {
       id: 4,
-      title: '客户拜访',
-      start: new Date(2024, 0, 18, 9, 0),
-      end: new Date(2024, 0, 18, 12, 0),
+      title: '客户会议',
+      start: new Date(currentYear, currentMonth, currentDay - 1, 9, 0),  // 昨天9:00
+      end: new Date(currentYear, currentMonth, currentDay - 1, 10, 30),  // 昨天10:30
       type: 'urgent'
     }
   ]);
 
-  // 日期导航功能
+  // 日期导航
   const navigateDate = (direction) => {
     let newDate;
     if (view === 'month') {
@@ -59,12 +61,10 @@ const CalendarPage = () => {
     setCurrentDate(newDate);
   };
 
-  // 跳转到今天
   const goToToday = () => {
     setCurrentDate(new Date());
   };
 
-  // 切换视图
   const handleViewChange = (newView) => {
     setView(newView);
   };
@@ -98,12 +98,13 @@ const CalendarPage = () => {
         color: 'white',
         border: 'none',
         fontSize: '12px',
-        fontWeight: '500'
+        fontWeight: '500',
+        padding: '2px 4px'
       }
     };
   };
 
-  // 事件处理
+  // 事件处理函数
   const handleSelectEvent = (event) => {
     alert(`事件: ${event.title}\n开始: ${moment(event.start).format('YYYY-MM-DD HH:mm')}\n结束: ${moment(event.end).format('YYYY-MM-DD HH:mm')}`);
   };
@@ -111,91 +112,74 @@ const CalendarPage = () => {
   const handleSelectSlot = ({ start, end }) => {
     const title = window.prompt('请输入新事件名称:');
     if (title) {
-      alert(`已创建事件: ${title}\n时间: ${moment(start).format('YYYY-MM-DD HH:mm')} - ${moment(end).format('YYYY-MM-DD HH:mm')}`);
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      
+      // 如果只点击不拖动，设置默认时长1小时
+      if (startDate.getTime() === endDate.getTime()) {
+        endDate.setHours(startDate.getHours() + 1);
+      }
+      
+      const newEvent = {
+        id: Date.now(),
+        title,
+        start: startDate,
+        end: endDate,
+        type: 'work'
+      };
+      
+      console.log('添加事件:', newEvent);
+      setEvents(prev => [...prev, newEvent]);
     }
   };
 
-  // 自定义工具栏组件
+  // 自定义工具栏
   const CustomToolbar = () => {
     const currentMoment = moment(currentDate);
     
     return (
       <div className="custom-toolbar">
         <div className="toolbar-left">
-          <button 
-            className="nav-btn prev-btn"
-            onClick={() => navigateDate(-1)}
-            title="上一页"
-          >
-            ‹
-          </button>
+          <button className="nav-btn prev-btn" onClick={() => navigateDate(-1)}>‹</button>
           
           <div className="date-display">
             <span className="current-year">{currentMoment.format('YYYY')}年</span>
             <span className="current-month">{currentMoment.format('MM')}月</span>
-            {view === 'day' && (
-              <span className="current-day">{currentMoment.format('DD')}日</span>
-            )}
+            {view === 'day' && <span className="current-day">{currentMoment.format('DD')}日</span>}
           </div>
           
-          <button 
-            className="nav-btn next-btn"
-            onClick={() => navigateDate(1)}
-            title="下一页"
-          >
-            ›
-          </button>
-          
-          <button 
-            className="today-btn"
-            onClick={goToToday}
-          >
-            今天
-          </button>
+          <button className="nav-btn next-btn" onClick={() => navigateDate(1)}>›</button>
+          <button className="today-btn" onClick={goToToday}>今天</button>
         </div>
         
         <div className="toolbar-right">
           <div className="view-controls">
-            <button 
-              className={`view-btn ${view === 'month' ? 'active' : ''}`}
-              onClick={() => handleViewChange('month')}
-            >
-              月
-            </button>
-            <button 
-              className={`view-btn ${view === 'week' ? 'active' : ''}`}
-              onClick={() => handleViewChange('week')}
-            >
-              周
-            </button>
-            <button 
-              className={`view-btn ${view === 'day' ? 'active' : ''}`}
-              onClick={() => handleViewChange('day')}
-            >
-              日
-            </button>
+            <button className={`view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => handleViewChange('month')}>月</button>
+            <button className={`view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => handleViewChange('week')}>周</button>
+            <button className={`view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => handleViewChange('day')}>日</button>
           </div>
           
-          <button 
-            className="add-event-btn"
-            onClick={() => handleSelectSlot({ 
-              start: new Date(), 
-              end: new Date(Date.now() + 60 * 60 * 1000) 
-            })}
-          >
-            + 添加事件
-          </button>
+          <button className="add-event-btn" onClick={() => {
+            const now = new Date();
+            const end = new Date(now.getTime() + 60 * 60 * 1000);
+            handleSelectSlot({ start: now, end });
+          }}>+ 添加事件</button>
         </div>
       </div>
     );
   };
+
+  // 调试信息
+  console.log('当前事件:', events);
+  console.log('当前日期:', currentDate);
+  console.log('当前视图:', view);
 
   return (
     <div className="calendar-page">
       <div className="calendar-container">
         <div className="calendar-header">
           <div className="header-content">
-            <h1 className="app-title"> 时尚日历</h1>
+            <h1 className="app-title">智能日程日历</h1>
             <div className="user-info">
               <div className="user-avatar">用</div>
               <span className="user-name">用户</span>
@@ -231,6 +215,10 @@ const CalendarPage = () => {
                   agenda: "议程"
                 }}
                 style={{ height: 500 }}
+                // 添加这些props确保事件显示
+                popup
+                step={60}
+                showMultiDayTimes
               />
             </div>
           </div>
@@ -239,8 +227,8 @@ const CalendarPage = () => {
             <div className="sidebar-section">
               <h3 className="sidebar-title">
                 今日事件
-                <span className="event-count">{events.filter(event => 
-                  moment(event.start).isSame(moment(), 'day')).length}
+                <span className="event-count">
+                  {events.filter(event => moment(event.start).isSame(moment(), 'day')).length}
                 </span>
               </h3>
               
