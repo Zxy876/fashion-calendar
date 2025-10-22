@@ -1,0 +1,511 @@
+/* src/components/CalendarPage.css */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2c3e50;
+  --success-color: #2ecc71;
+  --warning-color: #e74c3c;
+  --info-color: #9b59b6;
+  --light-bg: #f8fafc;
+  --dark-text: #2c3e50;
+  --light-text: #64748b;
+  --white: #ffffff;
+  --border-color: #e2e8f0;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --glass-shadow: 0 8px 16px rgba(255, 255, 255, 0.3), 0 12px 8px rgba(255, 255, 255, 0.2);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+.calendar-page {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.calendar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.calendar-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  padding: 25px 30px;
+  color: white;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-title {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  backdrop-filter: blur(10px);
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+.calendar-content {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 0;
+}
+
+.main-calendar {
+  padding: 0;
+}
+
+/* 自定义工具栏样式 */
+.custom-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  background: var(--light-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.nav-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-color);
+  background: var(--white);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.nav-btn:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.date-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.current-year {
+  font-size: 20px;
+  color: var(--secondary-color);
+}
+
+.current-month {
+  font-size: 24px;
+  color: var(--primary-color);
+}
+
+.current-day {
+  font-size: 20px;
+  color: var(--info-color);
+}
+
+.today-btn {
+  padding: 10px 20px;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.today-btn:hover {
+  background: var(--light-bg);
+  transform: translateY(-2px);
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.view-controls {
+  display: flex;
+  background: var(--light-bg);
+  padding: 6px;
+  border-radius: 10px;
+  gap: 4px;
+}
+
+.view-btn {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--light-text);
+  transition: all 0.3s;
+}
+
+.view-btn.active {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.view-btn:hover:not(.active) {
+  background: var(--border-color);
+}
+
+.add-event-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--success-color), #27ae60);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.add-event-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(46, 204, 113, 0.4);
+}
+
+.calendar-wrapper {
+  padding: 20px 30px;
+}
+
+/* React Big Calendar 自定义样式 */
+.rbc-calendar {
+  font-family: inherit;
+}
+
+.rbc-toolbar {
+  display: none !important;
+}
+
+.rbc-header {
+  padding: 15px 0 !important;
+  font-weight: 600 !important;
+  color: var(--secondary-color) !important;
+  border: none !important;
+  background: transparent !important;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.rbc-date-cell {
+  text-align: center !important;
+  padding: 8px !important;
+}
+
+.rbc-date-cell button {
+  border: none !important;
+  background: transparent !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 auto !important;
+  transition: all 0.3s !important;
+  font-weight: 500 !important;
+}
+
+.rbc-date-cell button:hover {
+  background: var(--primary-color) !important;
+  color: white !important;
+}
+
+.rbc-today {
+  background: transparent !important;
+}
+
+.rbc-today button {
+  background: var(--primary-color) !important;
+  color: white !important;
+  font-weight: bold !important;
+}
+
+.rbc-off-range button {
+  color: #a19fb1 !important;
+}
+
+.rbc-event {
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 2px 6px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.rbc-month-view {
+  border: none !important;
+}
+
+.rbc-row {
+  min-height: 100px !important;
+}
+
+/* 侧边栏样式 */
+.calendar-sidebar {
+  background: var(--light-bg);
+  border-left: 1px solid var(--border-color);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.sidebar-section {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.sidebar-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--secondary-color);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.event-count {
+  background: var(--primary-color);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-item {
+  padding: 15px;
+  border-radius: 10px;
+  background: var(--white);
+  border-left: 4px solid var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.event-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.event-item.work {
+  border-left-color: var(--primary-color);
+}
+
+.event-item.meeting {
+  border-left-color: var(--info-color);
+}
+
+.event-item.personal {
+  border-left-color: var(--success-color);
+}
+
+.event-item.urgent {
+  border-left-color: var(--warning-color);
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.event-title {
+  font-weight: 600;
+  color: var(--secondary-color);
+  flex: 1;
+}
+
+.event-category {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.event-item.work .event-category {
+  background: #eaf2f8;
+  color: var(--primary-color);
+}
+
+.event-item.meeting .event-category {
+  background: #f4eef8;
+  color: var(--info-color);
+}
+
+.event-item.personal .event-category {
+  background: #eaf7ee;
+  color: var(--success-color);
+}
+
+.event-item.urgent .event-category {
+  background: #fdedec;
+  color: var(--warning-color);
+}
+
+.event-time {
+  color: var(--light-text);
+  font-size: 14px;
+}
+
+.empty-events {
+  text-align: center;
+  padding: 30px 0;
+  color: var(--light-text);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+/* 统计网格 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-item {
+  background: var(--white);
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--light-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .calendar-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendar-sidebar {
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .custom-toolbar {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .toolbar-left, .toolbar-right {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-page {
+    padding: 10px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .toolbar-left, .toolbar-right {
+    flex-wrap: wrap;
+  }
+  
+  .date-display {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+}
