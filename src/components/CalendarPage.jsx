@@ -192,34 +192,44 @@ const CalendarPage = () => {
             <CustomToolbar />
             
             <div className="calendar-wrapper">
-              <Calendar
-                localizer={localizer}
-                events={events}
-                startAccessor="start"
-                endAccessor="end"
-                view={view}
-                date={currentDate}
-                onView={setView}
-                onNavigate={setCurrentDate}
-                onSelectEvent={handleSelectEvent}
-                onSelectSlot={handleSelectSlot}
-                selectable
-                eventPropGetter={eventStyleGetter}
-                messages={{
-                  next: "下一个",
-                  previous: "上一个",
-                  today: "今天",
-                  month: "月",
-                  week: "周",
-                  day: "日",
-                  agenda: "议程"
-                }}
-                style={{ height: 500 }}
-                // 添加这些props确保事件显示
-                popup
-                step={60}
-                showMultiDayTimes
-              />
+            <Calendar
+  localizer={localizer}
+  events={events}
+  startAccessor="start"
+  endAccessor="end"
+  view={view}
+  date={currentDate}
+  onView={setView}
+  onNavigate={setCurrentDate}
+  onSelectEvent={handleSelectEvent}
+  onSelectSlot={handleSelectSlot}
+  selectable
+  eventPropGetter={eventStyleGetter}
+  messages={{
+    next: "下一个",
+    previous: "上一个",
+    today: "今天",
+    month: "月",
+    week: "周",
+    day: "日",
+    agenda: "议程"
+  }}
+  style={{ height: 500 }}
+  // 添加这个属性来显示事件小点
+  dayPropGetter={(date) => {
+    const hasEvents = events.some(event => {
+      const eventDate = new Date(event.start);
+      return eventDate.toDateString() === date.toDateString();
+    });
+    
+    return {
+      className: hasEvents ? 'has-events' : ''
+    };
+  }}
+  popup
+  step={60}
+  showMultiDayTimes
+/>
             </div>
           </div>
           

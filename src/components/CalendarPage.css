@@ -464,7 +464,54 @@ body {
   letter-spacing: 0.5px;
   font-weight: 600;
 }
+/* 增强版事件小点效果 */
+.has-events {
+  position: relative;
+}
 
+.has-events::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background-color: #ff6b6b;
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(255, 107, 107, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+  }
+}
+
+/* 不同类型事件的小点颜色 */
+.has-events.work::after {
+  background-color: #3498db; /* 蓝色 */
+}
+
+.has-events.meeting::after {
+  background-color: #9b59b6; /* 紫色 */
+}
+
+.has-events.personal::after {
+  background-color: #2ecc71; /* 绿色 */
+}
+
+.has-events.urgent::after {
+  background-color: #e74c3c; /* 红色 */
+}
 /* 响应式设计 */
 @media (max-width: 1024px) {
   .calendar-content {
