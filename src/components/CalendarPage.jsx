@@ -1,39 +1,38 @@
+// src/components/CalendarPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import { useNavigate } from 'react-router-dom';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './CalendarPage.css';
+import { storageService } from '../utils/storage';
 
 // 设置中文本地化
 moment.locale('zh-cn');
 const localizer = momentLocalizer(moment);
 
 const CalendarPage = () => {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState('month');
+  const [events, setEvents] = useState([]);
+  
+  // 添加悬停状态
   const [hoveredDate, setHoveredDate] = useState(null);
-  const [previewEvents, setPreviewEvents] = useState([]);
-  const navigate = useNavigate();
+  const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
   
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth();
-  const currentDay = new Date().getDate();
-  
-  // 从 localStorage 加载保存的事件
-  const [events, setEvents] = useState(() => {
-    const savedEvents = localStorage.getItem('calendar-events');
-    if (savedEvents) {
-      // 将字符串日期转换回 Date 对象
-      const parsedEvents = JSON.parse(savedEvents);
-      return parsedEvents.map(event => ({
-        ...event,
-        start: new Date(event.start),
-        end: new Date(event.end)
-      }));
-    } else {
-      // 默认事件
-      return [
+  // 从本地存储加载事件数据
+  useEffect(() => {
+    const savedEvents = storageService.getEvents();
+    
+    // 如果没有事件数据，初始化一些示例数据
+    if (savedEvents.length === 0) {
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth();
+      const currentDay = new Date().getDate();
+      
+      // 确保使用 Date 对象而不是字符串
+      const sampleEvents = [
         {
           id: 1,
           title: '团队周会',
@@ -63,88 +62,20 @@ const CalendarPage = () => {
           type: 'urgent'
         }
       ];
+      
+      sampleEvents.forEach(event => storageService.addEvent(event));
+      setEvents(sampleEvents);
+    } else {
+      // 确保从存储中加载的事件数据中的日期是 Date 对象
+      const processedEvents = savedEvents.map(event => ({
+        ...event,
+        start: new Date(event.start),
+        end: new Date(event.end)
+      }));
+      setEvents(processedEvents);
     }
-  });
+  }, []);
 
-  // 当事件变化时保存到 localStorage
-  useEffect(() => {
-    localStorage.setItem('calendar-events', JSON.stringify(events));
-  }, [events]);
-const [touchTimer, setTouchTimer] = useState(null);
-
-const handleTouchStart = (date) => {
-  const timer = setTimeout(() => {
-    handleDayMouseEnter(date);
-  }, 500); // 长按500ms显示预览
-  setTouchTimer(timer);
-};
-
-const handleTouchEnd = () => {
-  if (touchTimer) {
-    clearTimeout(touchTimer);
-    setTouchTimer(null);
-  }
-  handleDayMouseLeave();
-};
-
-  // 处理鼠标悬停
-  const handleDayMouseEnter = (date) => {
-    setHoveredDate(date);
-    const dayEvents = events.filter(event => 
-      moment(event.start).isSame(date, 'day')
-    );
-    setPreviewEvents(dayEvents);
-  };
-
-  const handleDayMouseLeave = () => {
-    setHoveredDate(null);
-    setPreviewEvents([]);
-  };
-
-  // 处理日期点击跳转
-  const handleDateClick = (date) => {
-    const dateString = moment(date).format('YYYY-MM-DD');
-    navigate(`/date/${dateString}`);
-  };
-
-  // 自定义日期单元格组件
-  const CustomDateCell = ({ date }) => {
-  const dayEvents = events.filter(event => 
-    moment(event.start).isSame(date, 'day')
-  );
-  
-  return (
-    <div 
-      className="custom-date-cell"
-      onMouseEnter={() => handleDayMouseEnter(date)}
-      onMouseLeave={handleDayMouseLeave}
-      onTouchStart={() => handleTouchStart(date)}
-      onTouchEnd={handleTouchEnd}
-      onClick={() => handleDateClick(date)}
-      style={{ 
-        height: '100%', 
-        width: '100%', 
-        cursor: 'pointer',
-        position: 'relative'
-      }}
-    >
-      <div className="date-number">
-        {moment(date).date()}
-      </div>
-      {dayEvents.length > 0 && (
-        <div className="event-dots">
-          {dayEvents.slice(0, 3).map((event, index) => (
-            <div 
-              key={index}
-              className={`event-dot ${event.type}`}
-              title={event.title}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
   // 日期导航
   const navigateDate = (direction) => {
     let newDate;
@@ -166,6 +97,7 @@ const handleTouchEnd = () => {
     setView(newView);
   };
 
+  // 事件样式
   const eventStyleGetter = (event) => {
     let backgroundColor = '#3174ad';
     
@@ -200,52 +132,109 @@ const handleTouchEnd = () => {
     };
   };
 
+  // 事件处理函数
   const handleSelectEvent = (event) => {
     alert(`事件: ${event.title}\n开始: ${moment(event.start).format('YYYY-MM-DD HH:mm')}\n结束: ${moment(event.end).format('YYYY-MM-DD HH:mm')}`);
   };
 
+  // 日期悬停处理
+  const handleDayMouseEnter = (date, e) => {
+    const dayEvents = storageService.getEventsByDate(date);
+    
+    if (dayEvents.length > 0) {
+      setHoveredDate({ date, events: dayEvents });
+      setHoveredPosition({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const handleDayMouseLeave = () => {
+    setHoveredDate(null);
+  };
+
+  // 日期点击处理 - 跳转到详情页
   const handleSelectSlot = ({ start, end }) => {
-    const title = window.prompt('请输入新事件名称:');
-    if (title) {
-      const startDate = new Date(start);
-      const endDate = new Date(end);
-      
-      if (startDate.getTime() === endDate.getTime()) {
-        endDate.setHours(startDate.getHours() + 1);
-      }
-      
-      const newEvent = {
-        id: Date.now(),
-        title,
-        start: startDate,
-        end: endDate,
-        type: 'work'  // 确保有 type 属性
-      };
-      
-      setEvents(prev => [...prev, newEvent]);
-    }
+    const dateStr = moment(start).format('YYYY-MM-DD');
+    navigate(`/day/${dateStr}`);
   };
 
-  // 添加事件类型选择功能
-  const handleAddEventWithType = () => {
-    const title = window.prompt('请输入新事件名称:');
-    if (title) {
-      const type = window.prompt('请输入事件类型 (work/meeting/personal/urgent):', 'work');
-      const now = new Date();
-      const end = new Date(now.getTime() + 60 * 60 * 1000);
-      
-      const newEvent = {
-        id: Date.now(),
-        title,
-        start: now,
-        end: end,
-        type: type || 'work'
-      };
-      
-      setEvents(prev => [...prev, newEvent]);
-    }
+  // 添加新事件
+  const handleAddEvent = () => {
+    const title = prompt('请输入事件标题:');
+    if (!title) return;
+
+    const type = prompt('请输入事件类型 (work/meeting/personal/urgent):', 'work');
+    const startTime = prompt('请输入开始时间 (HH:mm)', '09:00');
+    const endTime = prompt('请输入结束时间 (HH:mm)', '10:00');
+
+    const today = new Date();
+    const [startHour, startMinute] = startTime.split(':');
+    const [endHour, endMinute] = endTime.split(':');
+
+    const newEvent = {
+      title,
+      start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), startHour, startMinute),
+      end: new Date(today.getFullYear(), today.getMonth(), today.getDate(), endHour, endMinute),
+      type: type || 'work'
+    };
+
+    const savedEvent = storageService.addEvent(newEvent);
+    // 确保新事件的日期是 Date 对象
+    const eventWithDateObjects = {
+      ...savedEvent,
+      start: new Date(savedEvent.start),
+      end: new Date(savedEvent.end)
+    };
+    setEvents(prev => [...prev, eventWithDateObjects]);
   };
 
+  // 自定义日期单元格包装器
+  const CustomDayWrapper = ({ children, value }) => {
+    return (
+      <div 
+        onMouseEnter={(e) => handleDayMouseEnter(value, e)}
+        onMouseLeave={handleDayMouseLeave}
+        onClick={() => handleSelectSlot({ start: value, end: value })}
+        style={{ cursor: 'pointer', height: '100%' }}
+      >
+        {children}
+      </div>
+    );
+  };
+
+  // 渲染悬停预览卡片
+  const renderHoverPreview = () => {
+    if (!hoveredDate) return null;
+
+    return (
+      <div 
+        className="date-preview-card"
+        style={{
+          position: 'fixed',
+          left: hoveredPosition.x + 10,
+          top: hoveredPosition.y + 10,
+          zIndex: 1000,
+          pointerEvents: 'none'
+        }}
+      >
+        <div className="preview-header">
+          <h4>{moment(hoveredDate.date).format('MM月DD日')}</h4>
+          <span className="event-count">{hoveredDate.events.length} 个事件</span>
+        </div>
+        <div className="preview-events">
+          {hoveredDate.events.map(event => (
+            <div key={event.id} className={`preview-event ${event.type}`}>
+              <div className="event-time">
+                {moment(event.start).format('HH:mm')}
+              </div>
+              <div className="event-title">{event.title}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // 自定义工具栏
   const CustomToolbar = () => {
     const currentMoment = moment(currentDate);
     
@@ -271,13 +260,18 @@ const handleTouchEnd = () => {
             <button className={`view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => handleViewChange('day')}>日</button>
           </div>
           
-          <button className="add-event-btn" onClick={handleAddEventWithType}>
+          <button className="add-event-btn" onClick={handleAddEvent}>
             + 添加事件
           </button>
         </div>
       </div>
     );
   };
+
+  // 获取今日事件
+  const todayEvents = storageService.getEventsByDate(new Date());
+  // 获取本月事件统计
+  const monthEvents = storageService.getEventsByMonth(currentDate);
 
   return (
     <div className="calendar-page">
@@ -296,25 +290,6 @@ const handleTouchEnd = () => {
           <div className="main-calendar">
             <CustomToolbar />
             
-            {/* 悬停预览卡片 */}
-            {hoveredDate && previewEvents.length > 0 && (
-              <div className="date-preview-card">
-                <div className="preview-header">
-                  {moment(hoveredDate).format('MM月DD日')} 的事件
-                </div>
-                <div className="preview-events">
-                  {previewEvents.map(event => (
-                    <div key={event.id} className={`preview-event ${event.type}`}>
-                      <span className="preview-event-title">{event.title}</span>
-                      <span className="preview-event-time">
-                        {moment(event.start).format('HH:mm')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
             <div className="calendar-wrapper">
               <Calendar
                 localizer={localizer}
@@ -330,21 +305,7 @@ const handleTouchEnd = () => {
                 selectable
                 eventPropGetter={eventStyleGetter}
                 components={{
-                  month: {
-                    dateHeader: ({ date, label }) => (
-                      <CustomDateCell date={date} />
-                    )
-                  },
-                  week: {
-                    dateHeader: ({ date, label }) => (
-                      <CustomDateCell date={date} />
-                    )
-                  },
-                  day: {
-                    dateHeader: ({ date, label }) => (
-                      <CustomDateCell date={date} />
-                    )
-                  }
+                  dayWrapper: CustomDayWrapper
                 }}
                 messages={{
                   next: "下一个",
@@ -356,9 +317,26 @@ const handleTouchEnd = () => {
                   agenda: "议程"
                 }}
                 style={{ height: 500 }}
+                dayPropGetter={(date) => {
+                  const hasEvents = storageService.getEventsByDate(date).length > 0;
+                  return {
+                    className: hasEvents ? 'has-events' : ''
+                  };
+                }}
                 popup
                 step={60}
                 showMultiDayTimes
+                // 添加格式配置来修复兼容性问题
+                formats={{
+                  dateFormat: 'D',
+                  dayFormat: 'D',
+                  weekdayFormat: 'ddd',
+                  timeGutterFormat: 'HH:mm',
+                  monthHeaderFormat: 'YYYY年 MM月',
+                  dayHeaderFormat: 'YYYY年 MM月 DD日',
+                  dayRangeHeaderFormat: ({ start, end }) => 
+                    `${moment(start).format('YYYY年 MM月 DD日')} - ${moment(end).format('MM月 DD日')}`
+                }}
               />
             </div>
           </div>
@@ -367,33 +345,28 @@ const handleTouchEnd = () => {
             <div className="sidebar-section">
               <h3 className="sidebar-title">
                 今日事件
-                <span className="event-count">
-                  {events.filter(event => moment(event.start).isSame(moment(), 'day')).length}
-                </span>
+                <span className="event-count">{todayEvents.length}</span>
               </h3>
               
               <div className="event-list">
-                {events
-                  .filter(event => moment(event.start).isSame(moment(), 'day'))
-                  .map(event => (
-                    <div key={event.id} className={`event-item ${event.type}`}>
-                      <div className="event-header">
-                        <span className="event-title">{event.title}</span>
-                        <span className="event-category">
-                          {event.type === 'work' && '工作'}
-                          {event.type === 'meeting' && '会议'}
-                          {event.type === 'personal' && '个人'}
-                          {event.type === 'urgent' && '紧急'}
-                        </span>
-                      </div>
-                      <div className="event-time">
-                        {moment(event.start).format('HH:mm')} - {moment(event.end).format('HH:mm')}
-                      </div>
+                {todayEvents.map(event => (
+                  <div key={event.id} className={`event-item ${event.type}`}>
+                    <div className="event-header">
+                      <span className="event-title">{event.title}</span>
+                      <span className="event-category">
+                        {event.type === 'work' && '工作'}
+                        {event.type === 'meeting' && '会议'}
+                        {event.type === 'personal' && '个人'}
+                        {event.type === 'urgent' && '紧急'}
+                      </span>
                     </div>
-                  ))
-                }
+                    <div className="event-time">
+                      {moment(event.start).format('HH:mm')} - {moment(event.end).format('HH:mm')}
+                    </div>
+                  </div>
+                ))}
                 
-                {events.filter(event => moment(event.start).isSame(moment(), 'day')).length === 0 && (
+                {todayEvents.length === 0 && (
                   <div className="empty-events">
                     <div className="empty-icon">📅</div>
                     <p>今天没有安排事件</p>
@@ -406,24 +379,24 @@ const handleTouchEnd = () => {
               <h3 className="sidebar-title">本月统计</h3>
               <div className="stats-grid">
                 <div className="stat-item">
-                  <div className="stat-value">{events.length}</div>
+                  <div className="stat-value">{monthEvents.length}</div>
                   <div className="stat-label">总事件</div>
                 </div>
                 <div className="stat-item">
                   <div className="stat-value">
-                    {events.filter(e => e.type === 'work').length}
+                    {monthEvents.filter(e => e.type === 'work').length}
                   </div>
                   <div className="stat-label">工作</div>
                 </div>
                 <div className="stat-item">
                   <div className="stat-value">
-                    {events.filter(e => e.type === 'personal').length}
+                    {monthEvents.filter(e => e.type === 'personal').length}
                   </div>
                   <div className="stat-label">个人</div>
                 </div>
                 <div className="stat-item">
                   <div className="stat-value">
-                    {events.filter(e => e.type === 'urgent').length}
+                    {monthEvents.filter(e => e.type === 'urgent').length}
                   </div>
                   <div className="stat-label">紧急</div>
                 </div>
@@ -432,6 +405,9 @@ const handleTouchEnd = () => {
           </div>
         </div>
       </div>
+      
+      {/* 添加悬停预览卡片 */}
+      {renderHoverPreview()}
     </div>
   );
 };
