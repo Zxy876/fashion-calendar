@@ -1,0 +1,167 @@
+/* src/components/EventDetailPage.css */
+.event-detail-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+ 
+.detail-header {
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+ 
+.back-btn, .save-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+ 
+.back-btn {
+  background: #6c757d;
+  color: white;
+}
+ 
+.save-btn {
+  background: #28a745;
+  color: white;
+}
+ 
+.back-btn:hover, .save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+ 
+.detail-title {
+  color: #2c3e50;
+  font-size: 24px;
+  font-weight: 600;
+}
+ 
+.detail-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+ 
+.editor-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+ 
+.toolbar-btn {
+  padding: 8px 16px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+ 
+.toolbar-btn:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+ 
+.image-upload-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 10px;
+}
+ 
+.image-upload-panel input {
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+ 
+.events-section {
+  margin-bottom: 20px;
+}
+ 
+.events-section h3 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+ 
+.events-list {
+  display: grid;
+  gap: 10px;
+}
+ 
+.event-card {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+ 
+.event-card h4 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+}
+ 
+.event-card p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+ 
+.event-type {
+  background: #3498db;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+ 
+.no-events {
+  color: #6c757d;
+  font-style: italic;
+}
+ 
+.content-editor {
+  min-height: 400px;
+  padding: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+ 
+.content-editor:focus {
+  outline: none;
+  border-color: #3498db;
+}
+ 
+.content-editor:empty:before {
+  content: "在这里输入内容...";
+  color: #aaa;
+  position: absolute;
+  pointer-events: none;
+}
