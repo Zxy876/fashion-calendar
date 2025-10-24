@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
+import { useNavigate } from 'react-router-dom';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './CalendarPage.css';
 
@@ -11,42 +12,121 @@ const localizer = momentLocalizer(moment);
 const CalendarPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState('month');
+  const [hoveredDate, setHoveredDate] = useState(null);
+  const [previewEvents, setPreviewEvents] = useState([]);
+  const navigate = useNavigate();
   
-  // 修复：使用当前日期的事件数据
-  const currentYear = new Date().getFullYear(); // 2025
-  const currentMonth = new Date().getMonth();   // 9 (10月)
-  const currentDay = new Date().getDate();      // 当前日期
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  const currentDay = new Date().getDate();
   
-  const [events, setEvents] = useState([
-    {
-      id: 1,
-      title: '团队周会',
-      start: new Date(currentYear, currentMonth, currentDay, 10, 0),     // 今天10:00
-      end: new Date(currentYear, currentMonth, currentDay, 11, 30),      // 今天11:30
-      type: 'work'
-    },
-    {
-      id: 2,
-      title: '项目评审',
-      start: new Date(currentYear, currentMonth, currentDay + 1, 14, 0), // 明天14:00
-      end: new Date(currentYear, currentMonth, currentDay + 1, 16, 0),   // 明天16:00
-      type: 'meeting'
-    },
-    {
-      id: 3,
-      title: '健身训练',
-      start: new Date(currentYear, currentMonth, currentDay, 18, 0),     // 今天18:00
-      end: new Date(currentYear, currentMonth, currentDay, 19, 0),       // 今天19:00
-      type: 'personal'
-    },
-    {
-      id: 4,
-      title: '客户会议',
-      start: new Date(currentYear, currentMonth, currentDay - 1, 9, 0),  // 昨天9:00
-      end: new Date(currentYear, currentMonth, currentDay - 1, 10, 30),  // 昨天10:30
-      type: 'urgent'
+  // 从 localStorage 加载保存的事件
+  const [events, setEvents] = useState(() => {
+    const savedEvents = localStorage.getItem('calendar-events');
+    if (savedEvents) {
+      // 将字符串日期转换回 Date 对象
+      const parsedEvents = JSON.parse(savedEvents);
+      return parsedEvents.map(event => ({
+        ...event,
+        start: new Date(event.start),
+        end: new Date(event.end)
+      }));
+    } else {
+      // 默认事件
+      return [
+        {
+          id: 1,
+          title: '团队周会',
+          start: new Date(currentYear, currentMonth, currentDay, 10, 0),
+          end: new Date(currentYear, currentMonth, currentDay, 11, 30),
+          type: 'work'
+        },
+        {
+          id: 2,
+          title: '项目评审',
+          start: new Date(currentYear, currentMonth, currentDay + 1, 14, 0),
+          end: new Date(currentYear, currentMonth, currentDay + 1, 16, 0),
+          type: 'meeting'
+        },
+        {
+          id: 3,
+          title: '健身训练',
+          start: new Date(currentYear, currentMonth, currentDay, 18, 0),
+          end: new Date(currentYear, currentMonth, currentDay, 19, 0),
+          type: 'personal'
+        },
+        {
+          id: 4,
+          title: '客户会议',
+          start: new Date(currentYear, currentMonth, currentDay - 1, 9, 0),
+          end: new Date(currentYear, currentMonth, currentDay - 1, 10, 30),
+          type: 'urgent'
+        }
+      ];
     }
-  ]);
+  });
+
+  // 当事件变化时保存到 localStorage
+  useEffect(() => {
+    localStorage.setItem('calendar-events', JSON.stringify(events));
+  }, [events]);
+
+  // 处理鼠标悬停
+  const handleDayMouseEnter = (date) => {
+    setHoveredDate(date);
+    const dayEvents = events.filter(event => 
+      moment(event.start).isSame(date, 'day')
+    );
+    setPreviewEvents(dayEvents);
+  };
+
+  const handleDayMouseLeave = () => {
+    setHoveredDate(null);
+    setPreviewEvents([]);
+  };
+
+  // 处理日期点击跳转
+  const handleDateClick = (date) => {
+    const dateString = moment(date).format('YYYY-MM-DD');
+    navigate(`/date/${dateString}`);
+  };
+
+  // 自定义日期单元格组件
+  const CustomDateCell = ({ date }) => {
+    const dayEvents = events.filter(event => 
+      moment(event.start).isSame(date, 'day')
+    );
+    
+    return (
+      <div 
+        className="custom-date-cell"
+        onMouseEnter={() => handleDayMouseEnter(date)}
+        onMouseLeave={handleDayMouseLeave}
+        onClick={() => handleDateClick(date)}
+        style={{ 
+          height: '100%', 
+          width: '100%', 
+          cursor: 'pointer',
+          position: 'relative'
+        }}
+      >
+        <div className="date-number">
+          {moment(date).date()}
+        </div>
+        {dayEvents.length > 0 && (
+          <div className="event-dots">
+            {dayEvents.slice(0, 3).map((event, index) => (
+              <div 
+                key={index}
+                className={`event-dot ${event.type}`}
+                title={event.title}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // 日期导航
   const navigateDate = (direction) => {
@@ -69,7 +149,6 @@ const CalendarPage = () => {
     setView(newView);
   };
 
-  // 事件样式
   const eventStyleGetter = (event) => {
     let backgroundColor = '#3174ad';
     
@@ -104,7 +183,6 @@ const CalendarPage = () => {
     };
   };
 
-  // 事件处理函数
   const handleSelectEvent = (event) => {
     alert(`事件: ${event.title}\n开始: ${moment(event.start).format('YYYY-MM-DD HH:mm')}\n结束: ${moment(event.end).format('YYYY-MM-DD HH:mm')}`);
   };
@@ -115,7 +193,6 @@ const CalendarPage = () => {
       const startDate = new Date(start);
       const endDate = new Date(end);
       
-      // 如果只点击不拖动，设置默认时长1小时
       if (startDate.getTime() === endDate.getTime()) {
         endDate.setHours(startDate.getHours() + 1);
       }
@@ -125,15 +202,33 @@ const CalendarPage = () => {
         title,
         start: startDate,
         end: endDate,
-        type: 'work'
+        type: 'work'  // 确保有 type 属性
       };
       
-      console.log('添加事件:', newEvent);
       setEvents(prev => [...prev, newEvent]);
     }
   };
 
-  // 自定义工具栏
+  // 添加事件类型选择功能
+  const handleAddEventWithType = () => {
+    const title = window.prompt('请输入新事件名称:');
+    if (title) {
+      const type = window.prompt('请输入事件类型 (work/meeting/personal/urgent):', 'work');
+      const now = new Date();
+      const end = new Date(now.getTime() + 60 * 60 * 1000);
+      
+      const newEvent = {
+        id: Date.now(),
+        title,
+        start: now,
+        end: end,
+        type: type || 'work'
+      };
+      
+      setEvents(prev => [...prev, newEvent]);
+    }
+  };
+
   const CustomToolbar = () => {
     const currentMoment = moment(currentDate);
     
@@ -159,20 +254,13 @@ const CalendarPage = () => {
             <button className={`view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => handleViewChange('day')}>日</button>
           </div>
           
-          <button className="add-event-btn" onClick={() => {
-            const now = new Date();
-            const end = new Date(now.getTime() + 60 * 60 * 1000);
-            handleSelectSlot({ start: now, end });
-          }}>+ 添加事件</button>
+          <button className="add-event-btn" onClick={handleAddEventWithType}>
+            + 添加事件
+          </button>
         </div>
       </div>
     );
   };
-
-  // 调试信息
-  console.log('当前事件:', events);
-  console.log('当前日期:', currentDate);
-  console.log('当前视图:', view);
 
   return (
     <div className="calendar-page">
@@ -191,45 +279,70 @@ const CalendarPage = () => {
           <div className="main-calendar">
             <CustomToolbar />
             
+            {/* 悬停预览卡片 */}
+            {hoveredDate && previewEvents.length > 0 && (
+              <div className="date-preview-card">
+                <div className="preview-header">
+                  {moment(hoveredDate).format('MM月DD日')} 的事件
+                </div>
+                <div className="preview-events">
+                  {previewEvents.map(event => (
+                    <div key={event.id} className={`preview-event ${event.type}`}>
+                      <span className="preview-event-title">{event.title}</span>
+                      <span className="preview-event-time">
+                        {moment(event.start).format('HH:mm')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="calendar-wrapper">
-            <Calendar
-  localizer={localizer}
-  events={events}
-  startAccessor="start"
-  endAccessor="end"
-  view={view}
-  date={currentDate}
-  onView={setView}
-  onNavigate={setCurrentDate}
-  onSelectEvent={handleSelectEvent}
-  onSelectSlot={handleSelectSlot}
-  selectable
-  eventPropGetter={eventStyleGetter}
-  messages={{
-    next: "下一个",
-    previous: "上一个",
-    today: "今天",
-    month: "月",
-    week: "周",
-    day: "日",
-    agenda: "议程"
-  }}
-  style={{ height: 500 }}
-  // 添加这个属性来显示事件小点
-  dayPropGetter={(date) => {
-    const hasEvents = events.some(event => {
-      const eventDate = new Date(event.start);
-      return eventDate.toDateString() === date.toDateString();
-    });
-    
-    return {
-      className: hasEvents ? 'has-events' : ''
-    };
-  }}
-  popup
-  step={60}
-  showMultiDayTimes
-/>
+              <Calendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                view={view}
+                date={currentDate}
+                onView={setView}
+                onNavigate={setCurrentDate}
+                onSelectEvent={handleSelectEvent}
+                onSelectSlot={handleSelectSlot}
+                selectable
+                eventPropGetter={eventStyleGetter}
+                components={{
+                  month: {
+                    dateHeader: ({ date, label }) => (
+                      <CustomDateCell date={date} />
+                    )
+                  },
+                  week: {
+                    dateHeader: ({ date, label }) => (
+                      <CustomDateCell date={date} />
+                    )
+                  },
+                  day: {
+                    dateHeader: ({ date, label }) => (
+                      <CustomDateCell date={date} />
+                    )
+                  }
+                }}
+                messages={{
+                  next: "下一个",
+                  previous: "上一个",
+                  today: "今天",
+                  month: "月",
+                  week: "周",
+                  day: "日",
+                  agenda: "议程"
+                }}
+                style={{ height: 500 }}
+                popup
+                step={60}
+                showMultiDayTimes
+              />
             </div>
           </div>
           

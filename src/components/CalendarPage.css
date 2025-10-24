@@ -533,7 +533,126 @@ body {
     justify-content: center;
   }
 }
+/* 正确位置 - 在媒体查询外面 */
 
+/* 日期预览卡片样式 */
+.date-preview-card {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  z-index: 1000;
+  min-width: 250px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.preview-header {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.preview-events {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-event {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.preview-event.work {
+  background: #eaf2f8;
+  border-left: 3px solid #3498db;
+}
+
+.preview-event.meeting {
+  background: #f4eef8;
+  border-left: 3px solid #9b59b6;
+}
+
+.preview-event.personal {
+  background: #eaf7ee;
+  border-left: 3px solid #2ecc71;
+}
+
+.preview-event.urgent {
+  background: #fdedec;
+  border-left: 3px solid #e74c3c;
+}
+
+.preview-event-title {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.preview-event-time {
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* 自定义日期单元格 */
+.custom-date-cell {
+  height: 100%;
+  width: 100%;
+  padding: 8px;
+  position: relative;
+}
+
+.date-number {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.event-dots {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.event-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.event-dot.work {
+  background-color: #3498db;
+}
+
+.event-dot.meeting {
+  background-color: #9b59b6;
+}
+
+.event-dot.personal {
+  background-color: #2ecc71;
+}
+
+.event-dot.urgent {
+  background-color: #e74c3c;
+}
+
+/* 悬停效果 */
+.rbc-day-bg:hover {
+  background-color: rgba(52, 152, 219, 0.1) !important;
+}
+
+/* 然后才是媒体查询 */
 @media (max-width: 768px) {
   .calendar-page {
     padding: 10px;
