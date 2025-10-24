@@ -675,3 +675,314 @@ body {
     margin-bottom: 10px;
   }
 }
+/* src/components/CalendarPage.css 更新 - 在现有媒体查询基础上增强 */
+
+/* 增强现有媒体查询 */
+@media (max-width: 1024px) {
+  .calendar-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendar-sidebar {
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+    padding: 20px;
+  }
+  
+  .custom-toolbar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    padding: 15px 20px;
+  }
+  
+  .toolbar-left, .toolbar-right {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-page {
+    padding: 8px;
+  }
+  
+  .calendar-container {
+    border-radius: 12px;
+  }
+  
+  .calendar-header {
+    padding: 20px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .app-title {
+    font-size: 22px;
+  }
+  
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .custom-toolbar {
+    padding: 12px 15px;
+    gap: 10px;
+  }
+  
+  .toolbar-left, .toolbar-right {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .date-display {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .current-year, .current-month, .current-day {
+    font-size: 16px;
+  }
+  
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .today-btn, .add-event-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  .view-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  .calendar-wrapper {
+    padding: 15px;
+  }
+  
+  /* 优化日历网格 */
+  .rbc-month-view {
+    font-size: 12px;
+  }
+  
+  .rbc-header {
+    padding: 10px 0 !important;
+    font-size: 12px !important;
+  }
+  
+  .rbc-date-cell {
+    padding: 4px !important;
+  }
+  
+  .rbc-date-cell button {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+  }
+  
+  .custom-date-cell {
+    padding: 4px;
+  }
+  
+  .date-number {
+    font-size: 14px;
+  }
+  
+  .event-dot {
+    width: 6px;
+    height: 6px;
+  }
+  
+  /* 侧边栏优化 */
+  .calendar-sidebar {
+    padding: 15px;
+    gap: 20px;
+  }
+  
+  .sidebar-section {
+    padding: 15px;
+    border-radius: 10px;
+  }
+  
+  .sidebar-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .event-item {
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .stats-grid {
+    gap: 8px;
+  }
+  
+  .stat-item {
+    padding: 12px;
+    border-radius: 8px;
+  }
+  
+  .stat-value {
+    font-size: 20px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+  }
+  
+  /* 悬停预览卡片优化 */
+  .date-preview-card {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 300px;
+    z-index: 10000;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-page {
+    padding: 5px;
+  }
+  
+  .calendar-container {
+    border-radius: 8px;
+  }
+  
+  .calendar-header {
+    padding: 15px;
+  }
+  
+  .app-title {
+    font-size: 20px;
+  }
+  
+  .custom-toolbar {
+    padding: 10px 12px;
+  }
+  
+  .toolbar-left, .toolbar-right {
+    gap: 6px;
+  }
+  
+  .nav-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .today-btn, .add-event-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .view-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .calendar-wrapper {
+    padding: 10px;
+  }
+  
+  .rbc-row {
+    min-height: 80px !important;
+  }
+  
+  .rbc-date-cell button {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  
+  .calendar-sidebar {
+    padding: 12px;
+    gap: 15px;
+  }
+  
+  .sidebar-section {
+    padding: 12px;
+  }
+  
+  .event-item {
+    padding: 10px;
+    font-size: 13px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  
+  .stat-item {
+    padding: 10px;
+  }
+  
+  .stat-value {
+    font-size: 18px;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .nav-btn:hover, 
+  .today-btn:hover, 
+  .add-event-btn:hover, 
+  .view-btn:hover,
+  .back-btn:hover, 
+  .save-btn:hover,
+  .upload-btn:hover, 
+  .add-event-btn:hover {
+    transform: none;
+  }
+  
+  .event-item:hover {
+    transform: none;
+  }
+  
+  /* 为触摸设备增加点击反馈 */
+  .nav-btn:active, 
+  .today-btn:active, 
+  .add-event-btn:active,
+  .view-btn:active,
+  .back-btn:active, 
+  .save-btn:active,
+  .upload-btn:active, 
+  .add-event-btn:active {
+    transform: scale(0.95);
+  }
+  
+  .event-item:active {
+    transform: scale(0.98);
+  }
+}
+
+/* 横屏优化 */
+@media (max-width: 768px) and (orientation: landscape) {
+  .calendar-content {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .calendar-sidebar {
+    border-left: 1px solid var(--border-color);
+    border-top: none;
+  }
+  
+  .rbc-row {
+    min-height: 60px !important;
+  }
+}

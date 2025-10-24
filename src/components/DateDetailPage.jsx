@@ -14,7 +14,17 @@ const DateDetailPage = () => {
     backgroundColor: '#ffffff',
     events: []
   });
+const [isTouching, setIsTouching] = useState(false);
 
+// 在组件返回的JSX中，为按钮添加触摸事件
+const buttonProps = {
+  onTouchStart: () => setIsTouching(true),
+  onTouchEnd: () => setIsTouching(false),
+  onMouseDown: () => setIsTouching(true),
+  onMouseUp: () => setIsTouching(false),
+  onMouseLeave: () => setIsTouching(false),
+  style: isTouching ? { transform: 'scale(0.95)' } : {}
+};
   // 处理文本内容变化
   const handleTextChange = (e) => {
     setContent(prev => ({

@@ -70,6 +70,22 @@ const CalendarPage = () => {
   useEffect(() => {
     localStorage.setItem('calendar-events', JSON.stringify(events));
   }, [events]);
+const [touchTimer, setTouchTimer] = useState(null);
+
+const handleTouchStart = (date) => {
+  const timer = setTimeout(() => {
+    handleDayMouseEnter(date);
+  }, 500); // 长按500ms显示预览
+  setTouchTimer(timer);
+};
+
+const handleTouchEnd = () => {
+  if (touchTimer) {
+    clearTimeout(touchTimer);
+    setTouchTimer(null);
+  }
+  handleDayMouseLeave();
+};
 
   // 处理鼠标悬停
   const handleDayMouseEnter = (date) => {
@@ -93,41 +109,42 @@ const CalendarPage = () => {
 
   // 自定义日期单元格组件
   const CustomDateCell = ({ date }) => {
-    const dayEvents = events.filter(event => 
-      moment(event.start).isSame(date, 'day')
-    );
-    
-    return (
-      <div 
-        className="custom-date-cell"
-        onMouseEnter={() => handleDayMouseEnter(date)}
-        onMouseLeave={handleDayMouseLeave}
-        onClick={() => handleDateClick(date)}
-        style={{ 
-          height: '100%', 
-          width: '100%', 
-          cursor: 'pointer',
-          position: 'relative'
-        }}
-      >
-        <div className="date-number">
-          {moment(date).date()}
-        </div>
-        {dayEvents.length > 0 && (
-          <div className="event-dots">
-            {dayEvents.slice(0, 3).map((event, index) => (
-              <div 
-                key={index}
-                className={`event-dot ${event.type}`}
-                title={event.title}
-              />
-            ))}
-          </div>
-        )}
+  const dayEvents = events.filter(event => 
+    moment(event.start).isSame(date, 'day')
+  );
+  
+  return (
+    <div 
+      className="custom-date-cell"
+      onMouseEnter={() => handleDayMouseEnter(date)}
+      onMouseLeave={handleDayMouseLeave}
+      onTouchStart={() => handleTouchStart(date)}
+      onTouchEnd={handleTouchEnd}
+      onClick={() => handleDateClick(date)}
+      style={{ 
+        height: '100%', 
+        width: '100%', 
+        cursor: 'pointer',
+        position: 'relative'
+      }}
+    >
+      <div className="date-number">
+        {moment(date).date()}
       </div>
-    );
-  };
-
+      {dayEvents.length > 0 && (
+        <div className="event-dots">
+          {dayEvents.slice(0, 3).map((event, index) => (
+            <div 
+              key={index}
+              className={`event-dot ${event.type}`}
+              title={event.title}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
   // 日期导航
   const navigateDate = (direction) => {
     let newDate;
