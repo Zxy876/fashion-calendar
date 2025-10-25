@@ -1,5 +1,5 @@
 // src/services/unsplashService.js
-const UNSPLASH_ACCESS_KEY = 'YOUR_UNSPLASH_ACCESS_KEY'; // 需要替换为实际的 Unsplash Access Key
+const UNSPLASH_ACCESS_KEY = 'Vav_ZsQHIwJIQTh2FXP8wYroJ95JdWZClOiaf_5xBbM'; // 需要替换为实际的 Unsplash Access Key
 
 export const unsplashService = {
   // 搜索图片
