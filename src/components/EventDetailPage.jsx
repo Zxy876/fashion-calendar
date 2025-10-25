@@ -28,18 +28,35 @@ const EventDetailPage = () => {
   // 初始化编辑器内容
   useEffect(() => {
     if (editorRef.current && content !== undefined) {
-      editorRef.current.innerHTML = content || '';
+      if (content) {
+        editorRef.current.innerHTML = content;
+        editorRef.current.classList.remove('empty');
+      } else {
+        editorRef.current.innerHTML = '';
+        editorRef.current.classList.add('empty');
+      }
     }
   }, [content]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // 验证文件类型
+      if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return;
+      }
+
+      // 验证文件大小（限制为 5MB）
+      if (file.size > 5 * 1024 * 1024) {
+        alert('图片大小不能超过 5MB');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const imageUrl = reader.result;
         
-        // 使用更安全的方式插入图片
         if (editorRef.current) {
           const selection = window.getSelection();
           const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
@@ -50,6 +67,7 @@ const EventDetailPage = () => {
           img.style.maxWidth = "100%";
           img.style.borderRadius = "8px";
           img.style.margin = "10px 0";
+          img.className = "uploaded-image";
           
           if (range) {
             range.insertNode(img);
@@ -58,30 +76,51 @@ const EventDetailPage = () => {
             editorRef.current.appendChild(img);
           }
           
+          // 移除空状态
+          editorRef.current.classList.remove('empty');
+          
           // 触发内容更新
           const newContent = editorRef.current.innerHTML;
           setContent(newContent);
           storageService.saveDailyContent(date, newContent);
         }
       };
+      
+      reader.onerror = () => {
+        alert('图片读取失败，请重试');
+      };
+      
       reader.readAsDataURL(file);
     }
-    // 清空input，允许重复选择同一文件
     e.target.value = '';
   };
 
   const handleBackgroundUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('图片大小不能超过 5MB');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const imageUrl = reader.result;
         setBackgroundImage(imageUrl);
         storageService.saveDailyBackground(date, imageUrl);
       };
+      
+      reader.onerror = () => {
+        alert('背景图片读取失败，请重试');
+      };
+      
       reader.readAsDataURL(file);
     }
-    // 清空input，允许重复选择同一文件
     e.target.value = '';
   };
 
@@ -93,21 +132,56 @@ const EventDetailPage = () => {
   const handleContentChange = (e) => {
     const newContent = e.target.innerHTML;
     setContent(newContent);
+    
+    // 更新空状态
+    if (editorRef.current) {
+      if (newContent === '<br>' || newContent === '') {
+        editorRef.current.classList.add('empty');
+      } else {
+        editorRef.current.classList.remove('empty');
+      }
+    }
+    
     // 自动保存
     storageService.saveDailyContent(date, newContent);
   };
 
+  const handleEditorFocus = () => {
+    if (editorRef.current) {
+      editorRef.current.classList.remove('empty');
+    }
+  };
+
+  const handleEditorBlur = () => {
+    if (editorRef.current) {
+      const currentContent = editorRef.current.innerHTML;
+      if (!currentContent || currentContent === '<br>') {
+        editorRef.current.classList.add('empty');
+      }
+    }
+  };
+
   const addNewEvent = () => {
     const title = prompt('请输入事件标题:');
-    if (!title) return;
+    if (!title || title.trim() === '') {
+      alert('事件标题不能为空');
+      return;
+    }
 
     const type = prompt('请输入事件类型 (work/meeting/personal/urgent):', 'work');
+    const validTypes = ['work', 'meeting', 'personal', 'urgent'];
+    if (!validTypes.includes(type)) {
+      alert('事件类型必须是: work, meeting, personal 或 urgent');
+      return;
+    }
+
     const startTime = prompt('请输入开始时间 (HH:mm)', '09:00');
     const endTime = prompt('请输入结束时间 (HH:mm)', '10:00');
 
     // 验证时间格式
-    if (!startTime || !endTime || !startTime.match(/^\d{2}:\d{2}$/) || !endTime.match(/^\d{2}:\d{2}$/)) {
-      alert('时间格式不正确，请使用 HH:mm 格式');
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!startTime || !endTime || !timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+      alert('时间格式不正确，请使用 HH:mm 格式 (00:00 - 23:59)');
       return;
     }
 
@@ -120,15 +194,29 @@ const EventDetailPage = () => {
       return;
     }
 
+    // 检查时间冲突
+    const hasConflict = events.some(event => {
+      const eventStart = new Date(event.start);
+      const eventEnd = new Date(event.end);
+      return (start < eventEnd && end > eventStart);
+    });
+
+    if (hasConflict) {
+      if (!confirm('该时间段与已有事件冲突，是否继续添加？')) {
+        return;
+      }
+    }
+
     const newEvent = {
-      title,
+      title: title.trim(),
       start: start,
       end: end,
-      type: type || 'work'
+      type: type
     };
 
     const savedEvent = storageService.addEvent(newEvent);
     setEvents(prev => [...prev, savedEvent]);
+    alert('事件添加成功！');
   };
 
   const deleteEvent = (eventId) => {
@@ -137,15 +225,16 @@ const EventDetailPage = () => {
       setEvents(updatedEvents.filter(event => 
         moment(event.start).isSame(date, 'day')
       ));
+      alert('事件已删除');
     }
   };
 
   const formatEventType = (type) => {
     const typeMap = {
-      'work': '工作',
-      'meeting': '会议',
-      'personal': '个人',
-      'urgent': '紧急'
+      'work': '💼 工作',
+      'meeting': '👥 会议',
+      'personal': '👤 个人',
+      'urgent': '🚨 紧急'
     };
     return typeMap[type] || type;
   };
@@ -166,7 +255,7 @@ const EventDetailPage = () => {
         <button className="back-btn" onClick={() => navigate('/')}>
           ← 返回日历
         </button>
-        <h1 className="detail-title">{moment(date).format('YYYY年MM月DD日')}</h1>
+        <h1 className="detail-title">{moment(date).format('YYYY年MM月DD日 dddd')}</h1>
         <button className="save-btn" onClick={saveContent}>
           💾 保存内容
         </button>
@@ -202,7 +291,6 @@ const EventDetailPage = () => {
                 type="file" 
                 accept="image/*" 
                 onChange={handleImageUpload}
-                multiple
               />
             </div>
           )}
@@ -252,12 +340,13 @@ const EventDetailPage = () => {
           contentEditable
           suppressContentEditableWarning
           onInput={handleContentChange}
+          onFocus={handleEditorFocus}
+          onBlur={handleEditorBlur}
           style={{ 
             backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundBlendMode: backgroundImage ? 'overlay' : 'normal',
-            backgroundColor: backgroundImage ? 'rgba(255, 255, 255, 0.8)' : 'transparent'
+            backgroundColor: backgroundImage ? 'rgba(255, 255, 255, 0.9)' : 'transparent'
           }}
         />
       </div>
