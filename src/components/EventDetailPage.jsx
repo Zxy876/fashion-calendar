@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import './EventDetailPage.css';
 import { storageService } from '../utils/storage';
+import ImageSearchModal from './ImageSearchModal';
 
 const EventDetailPage = () => {
   const { date } = useParams();
@@ -12,11 +13,12 @@ const EventDetailPage = () => {
   const [backgroundImage, setBackgroundImage] = useState('');
   const [events, setEvents] = useState([]);
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showImageSearch, setShowImageSearch] = useState(false);
   const editorRef = useRef(null);
   const isComposingRef = useRef(false);
-  const isInitializedRef = useRef(false); // 防止重复初始化
+  const isInitializedRef = useRef(false);
 
-  // 加载该日期的事件数据 - 修复版本
+  // 加载该日期的事件数据
   useEffect(() => {
     console.log('🔍 加载数据，日期:', date);
     
@@ -28,7 +30,6 @@ const EventDetailPage = () => {
     console.log('🖼️ 背景图片:', savedBackground ? '有' : '无');
     console.log('📅 事件数量:', dateEvents.length);
     
-    // 立即设置内容状态
     setContent(savedContent || '');
     setBackgroundImage(savedBackground || '');
     setEvents(dateEvents);
@@ -36,32 +37,28 @@ const EventDetailPage = () => {
     isInitializedRef.current = true;
   }, [date]);
 
-  // 初始化编辑器内容 - 关键修复！
+  // 初始化编辑器内容
   useEffect(() => {
     if (!editorRef.current) return;
     
     console.log('🎯 初始化编辑器，当前内容状态:', content ? `有内容，长度: ${content.length}` : '空');
     
-    // 保存当前选区
     const selection = window.getSelection();
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
     const currentFocus = document.activeElement;
     
-    // 设置编辑器内容
     editorRef.current.innerHTML = content || '';
     
     console.log('✅ 编辑器内容已设置:', editorRef.current.innerHTML.substring(0, 100));
     
-    // 恢复选区
     if (range && currentFocus === editorRef.current) {
       selection.removeAllRanges();
       selection.addRange(range);
     }
     
-    // 更新空状态
     updateEmptyState();
     
-  }, [content, date]); // 依赖 content 和 date
+  }, [content, date]);
 
   const updateEmptyState = () => {
     if (editorRef.current) {
@@ -82,12 +79,11 @@ const EventDetailPage = () => {
     }
   };
 
-  // 从 DOM 更新内容状态 - 修复版本
+  // 从 DOM 更新内容状态
   const updateContentFromDOM = () => {
     if (editorRef.current) {
       const newContent = editorRef.current.innerHTML;
       
-      // 过滤掉零宽空格
       const cleanContent = newContent.replace(/&#8203;|<\/?div[^>]*>|<\/?br[^>]*>/g, '').trim();
       
       console.log('💾 准备保存内容，长度:', newContent.length, '清理后:', cleanContent.length);
@@ -98,7 +94,6 @@ const EventDetailPage = () => {
         const saveResult = storageService.saveDailyContent(date, newContent);
         console.log('💽 保存结果:', saveResult ? '成功' : '失败', '键名:', `daily-content-${date}`);
       } else {
-        // 如果内容为空，也保存空内容
         setContent('');
         updateEmptyState();
         storageService.saveDailyContent(date, '');
@@ -107,12 +102,11 @@ const EventDetailPage = () => {
     }
   };
 
-  // 内容变化处理 - 立即保存
+  // 内容变化处理
   const handleContentChange = () => {
     if (isComposingRef.current) return;
     
     console.log('⌨️ 内容变化触发');
-    // 立即保存，不使用防抖
     updateContentFromDOM();
   };
 
@@ -131,7 +125,6 @@ const EventDetailPage = () => {
     if (e.key === 'Enter') {
       e.preventDefault();
       document.execCommand('insertLineBreak');
-      // 立即保存
       setTimeout(updateContentFromDOM, 10);
     }
   };
@@ -146,10 +139,8 @@ const EventDetailPage = () => {
       editorRef.current.classList.remove('empty');
       console.log('🎯 编辑器获得焦点');
       
-      // 如果只有零宽空格，清空它
       if (editorRef.current.innerHTML === '&#8203;' || editorRef.current.innerHTML === '<div>&#8203;</div>') {
         editorRef.current.innerHTML = '';
-        // 确保光标在正确位置
         const range = document.createRange();
         const selection = window.getSelection();
         range.selectNodeContents(editorRef.current);
@@ -163,7 +154,7 @@ const EventDetailPage = () => {
   const handleEditorBlur = () => {
     console.log('👋 编辑器失去焦点');
     updateEmptyState();
-    updateContentFromDOM(); // 失焦时也保存
+    updateContentFromDOM();
   };
 
   const handleImageUpload = (e) => {
@@ -204,7 +195,6 @@ const EventDetailPage = () => {
           }
           
           console.log('✅ 图片插入完成');
-          // 立即保存
           updateContentFromDOM();
         }
       };
@@ -246,6 +236,42 @@ const EventDetailPage = () => {
       reader.readAsDataURL(file);
     }
     e.target.value = '';
+  };
+
+  // 图片搜索相关功能
+  const handleImageSelect = (imageUrl) => {
+    if (editorRef.current) {
+      const selection = window.getSelection();
+      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+      
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      img.alt = "unsplash image";
+      img.className = "uploaded-image";
+      
+      if (range) {
+        range.insertNode(img);
+        const space = document.createTextNode(' ');
+        range.insertNode(space);
+        range.collapse(false);
+      } else {
+        editorRef.current.appendChild(img);
+        editorRef.current.appendChild(document.createTextNode(' '));
+      }
+      
+      updateContentFromDOM();
+    }
+  };
+
+  const handleImageSave = (imageData) => {
+    storageService.saveDailyImage(date, imageData);
+    alert('图片已保存到收藏！');
+  };
+
+  const handleSetAsBackground = (imageUrl) => {
+    setBackgroundImage(imageUrl);
+    storageService.saveDailyBackground(date, imageUrl);
+    alert('已设置为背景图片！');
   };
 
   const addNewEvent = () => {
@@ -333,7 +359,7 @@ const EventDetailPage = () => {
     return colorMap[type] || '#3498db';
   };
 
-  // 调试函数 - 在控制台检查存储状态
+  // 调试函数
   const checkStorage = () => {
     console.log('🔍 存储状态检查:');
     console.log('当前日期:', date);
@@ -379,8 +405,16 @@ const EventDetailPage = () => {
             📷 添加图片
           </button>
           
+          <button 
+            className="toolbar-btn"
+            onClick={() => setShowImageSearch(true)}
+            style={{ background: '#9b59b6' }}
+          >
+            🖼️ 搜索图片
+          </button>
+          
           <label className="toolbar-btn">
-            🖼️ 背景图片
+            🎨 背景图片
             <input 
               type="file" 
               accept="image/*" 
@@ -462,6 +496,17 @@ const EventDetailPage = () => {
           }}
         />
       </div>
+
+      {/* 图片搜索模态框 */}
+      {showImageSearch && (
+        <ImageSearchModal
+          date={date}
+          onClose={() => setShowImageSearch(false)}
+          onImageSelect={handleImageSelect}
+          onImageSave={handleImageSave}
+          onSetAsBackground={handleSetAsBackground}
+        />
+      )}
     </div>
   );
 };
