@@ -143,6 +143,9 @@
   font-style: italic;
 }
  
+/* src/components/EventDetailPage.css */
+/* ... 其他样式保持不变 ... */
+
 .content-editor {
   min-height: 400px;
   padding: 20px;
@@ -153,13 +156,14 @@
   background-repeat: no-repeat;
   position: relative;
 }
- 
+
 .content-editor:focus {
   outline: none;
   border-color: #3498db;
 }
- 
-.content-editor:empty:before {
+
+/* 使用类名控制占位符，而不是 :empty 伪类 */
+.content-editor.empty:before {
   content: "在这里输入内容...";
   color: #aaa;
   position: absolute;

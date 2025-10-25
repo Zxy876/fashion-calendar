@@ -1,5 +1,5 @@
 // src/components/EventDetailPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import './EventDetailPage.css';
@@ -12,6 +12,7 @@ const EventDetailPage = () => {
   const [backgroundImage, setBackgroundImage] = useState('');
   const [events, setEvents] = useState([]);
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const editorRef = useRef(null);
 
   // 加载该日期的事件数据
   useEffect(() => {
@@ -19,10 +20,23 @@ const EventDetailPage = () => {
     const savedBackground = storageService.getDailyBackground(date);
     const dateEvents = storageService.getEventsByDate(date);
 
-    setContent(savedContent);
-    setBackgroundImage(savedBackground);
+    setContent(savedContent || '');
+    setBackgroundImage(savedBackground || '');
     setEvents(dateEvents);
   }, [date]);
+
+  // 当内容加载后，设置编辑器内容
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = content || '';
+      // 如果没有内容，添加占位符
+      if (!content) {
+        editorRef.current.classList.add('empty');
+      } else {
+        editorRef.current.classList.remove('empty');
+      }
+    }
+  }, [content]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -30,9 +44,23 @@ const EventDetailPage = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const imageUrl = reader.result;
-        const newContent = content + `<img src="${imageUrl}" alt="uploaded" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" />`;
-        setContent(newContent);
-        storageService.saveDailyContent(date, newContent);
+        const imgHTML = `<img src="${imageUrl}" alt="uploaded" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" />`;
+        
+        // 插入图片到当前光标位置
+        if (editorRef.current) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const imgNode = document.createElement('div');
+            imgNode.innerHTML = imgHTML;
+            range.insertNode(imgNode);
+            
+            // 更新内容状态
+            const newContent = editorRef.current.innerHTML;
+            setContent(newContent);
+            storageService.saveDailyContent(date, newContent);
+          }
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -52,8 +80,47 @@ const EventDetailPage = () => {
   };
 
   const saveContent = () => {
-    storageService.saveDailyContent(date, content);
-    alert('内容已保存');
+    if (editorRef.current) {
+      const currentContent = editorRef.current.innerHTML;
+      storageService.saveDailyContent(date, currentContent);
+      alert('内容已保存');
+    }
+  };
+
+  const handleContentChange = () => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML;
+      setContent(newContent);
+      
+      // 根据内容显示/隐藏占位符
+      if (newContent === '<br>' || newContent === '') {
+        editorRef.current.classList.add('empty');
+      } else {
+        editorRef.current.classList.remove('empty');
+      }
+      
+      // 自动保存
+      storageService.saveDailyContent(date, newContent);
+    }
+  };
+
+  const handleEditorFocus = () => {
+    if (editorRef.current) {
+      editorRef.current.classList.remove('empty');
+      // 如果内容是空的，清空以便输入
+      if (editorRef.current.innerHTML === '在这里输入内容...') {
+        editorRef.current.innerHTML = '';
+      }
+    }
+  };
+
+  const handleEditorBlur = () => {
+    if (editorRef.current) {
+      if (!editorRef.current.innerHTML || editorRef.current.innerHTML === '<br>') {
+        editorRef.current.classList.add('empty');
+        editorRef.current.innerHTML = '在这里输入内容...';
+      }
+    }
   };
 
   const addNewEvent = () => {
@@ -85,13 +152,6 @@ const EventDetailPage = () => {
         moment(event.start).isSame(date, 'day')
       ));
     }
-  };
-
-  const handleContentChange = (e) => {
-    const newContent = e.target.innerHTML;
-    setContent(newContent);
-    // 自动保存
-    storageService.saveDailyContent(date, newContent);
   };
 
   return (
@@ -179,16 +239,18 @@ const EventDetailPage = () => {
         </div>
         
         <div 
-          className="content-editor"
+          ref={editorRef}
+          className="content-editor empty"
           contentEditable
           suppressContentEditableWarning
           onInput={handleContentChange}
+          onFocus={handleEditorFocus}
+          onBlur={handleEditorBlur}
           style={{ 
             backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
-          dangerouslySetInnerHTML={{ __html: content }}
         />
       </div>
     </div>
