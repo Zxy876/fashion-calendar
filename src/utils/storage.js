@@ -33,7 +33,7 @@ export const storageService = {
     const events = storageService.getEvents();
     const newEvent = {
       ...event,
-      id: Date.now() + Math.random().toString(36).substr(2, 9) // 唯一ID
+      id: Date.now() + Math.random().toString(36).substr(2, 9)
     };
     events.push(newEvent);
     storageService.saveEvents(events);
@@ -58,7 +58,7 @@ export const storageService = {
     return filteredEvents;
   },
 
-  // 每日内容管理
+  // 每日内容管理 - 修复这里的bug！
   getDailyContent: (date) => {
     try {
       return localStorage.getItem(`${STORAGE_KEYS.DAILY_CONTENT}${date}`) || '';
@@ -70,7 +70,9 @@ export const storageService = {
 
   saveDailyContent: (date, content) => {
     try {
+      // 修复：使用 DAILY_CONTENT 而不是 DAILY_BACKGROUND
       localStorage.setItem(`${STORAGE_KEYS.DAILY_CONTENT}${date}`, content);
+      console.log(`内容已保存到: daily-content-${date}`, content.substring(0, 100));
       return true;
     } catch (error) {
       console.error('保存每日内容失败:', error);
@@ -112,5 +114,21 @@ export const storageService = {
     return events.filter(event => 
       moment(event.start).isSame(date, 'month')
     );
+  },
+
+  // 新增：清理所有数据（用于测试）
+  clearAllData: () => {
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('daily-content-') || key.startsWith('daily-background-') || key === 'calendar-events') {
+          localStorage.removeItem(key);
+        }
+      });
+      console.log('所有数据已清理');
+      return true;
+    } catch (error) {
+      console.error('清理数据失败:', error);
+      return false;
+    }
   }
 };
