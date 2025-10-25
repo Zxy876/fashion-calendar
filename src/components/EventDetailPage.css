@@ -3,6 +3,7 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
  
 .detail-header {
@@ -15,6 +16,7 @@
   padding: 20px 30px;
   border-radius: 15px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
  
 .back-btn, .save-btn {
@@ -23,7 +25,8 @@
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  font-size: 14px;
 }
  
 .back-btn {
@@ -31,12 +34,19 @@
   color: white;
 }
  
+.back-btn:hover {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+ 
 .save-btn {
   background: #28a745;
   color: white;
 }
  
-.back-btn:hover, .save-btn:hover {
+.save-btn:hover {
+  background: #218838;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -45,6 +55,7 @@
   color: #2c3e50;
   font-size: 24px;
   font-weight: 600;
+  margin: 0;
 }
  
 .detail-content {
@@ -54,6 +65,7 @@
   border-radius: 15px;
   padding: 30px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
  
 .editor-toolbar {
@@ -63,6 +75,7 @@
   padding-bottom: 20px;
   border-bottom: 2px solid #e2e8f0;
   flex-wrap: wrap;
+  align-items: center;
 }
  
 .toolbar-btn {
@@ -73,12 +86,14 @@
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  font-size: 14px;
 }
  
 .toolbar-btn:hover {
   background: #2980b9;
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
  
 .image-upload-panel {
@@ -86,27 +101,33 @@
   align-items: center;
   gap: 10px;
   margin-left: 10px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
 }
  
 .image-upload-panel input {
   padding: 6px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 14px;
 }
  
 .events-section {
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
  
 .events-section h3 {
   color: #2c3e50;
   margin-bottom: 15px;
   font-size: 18px;
+  font-weight: 600;
 }
  
 .events-list {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
  
 .event-card {
@@ -117,11 +138,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+ 
+.event-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
  
 .event-card h4 {
   margin: 0 0 5px 0;
   color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
 }
  
 .event-card p {
@@ -130,22 +160,48 @@
   font-size: 14px;
 }
  
+.event-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+ 
 .event-type {
-  background: #3498db;
   color: white;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
+  font-weight: 500;
+  min-width: 40px;
+  text-align: center;
+}
+ 
+.delete-event-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+ 
+.delete-event-btn:hover {
+  background: #c0392b;
+  transform: scale(1.05);
 }
  
 .no-events {
   color: #6c757d;
   font-style: italic;
+  text-align: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #dee2e6;
 }
  
-/* src/components/EventDetailPage.css */
-/* ... 其他样式保持不变 ... */
-
 .content-editor {
   min-height: 400px;
   padding: 20px;
@@ -155,17 +211,62 @@
   background-position: center;
   background-repeat: no-repeat;
   position: relative;
+  font-size: 16px;
+  line-height: 1.6;
+  transition: all 0.3s ease;
 }
-
+ 
 .content-editor:focus {
   outline: none;
   border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
-
-/* 使用类名控制占位符，而不是 :empty 伪类 */
-.content-editor.empty:before {
+ 
+.content-editor:empty:before {
   content: "在这里输入内容...";
   color: #aaa;
   position: absolute;
   pointer-events: none;
+  font-style: italic;
+}
+ 
+/* 确保编辑器内的图片样式 */
+.content-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 10px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+ 
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .event-detail-page {
+    padding: 10px;
+  }
+  
+  .detail-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .detail-content {
+    padding: 20px;
+  }
+  
+  .editor-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .event-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .event-actions {
+    align-self: flex-end;
+  }
 }
