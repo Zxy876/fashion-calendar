@@ -13,51 +13,157 @@ const EventDetailPage = () => {
   const [events, setEvents] = useState([]);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const editorRef = useRef(null);
-  const isComposingRef = useRef(false); // 用于中文输入法
+  const isComposingRef = useRef(false);
+  const isInitializedRef = useRef(false); // 防止重复初始化
 
-  // 加载该日期的事件数据
+  // 加载该日期的事件数据 - 修复版本
   useEffect(() => {
+    console.log('🔍 加载数据，日期:', date);
+    
     const savedContent = storageService.getDailyContent(date);
     const savedBackground = storageService.getDailyBackground(date);
     const dateEvents = storageService.getEventsByDate(date);
 
+    console.log('📝 加载到的内容:', savedContent ? `有内容，长度: ${savedContent.length}` : '无内容');
+    console.log('🖼️ 背景图片:', savedBackground ? '有' : '无');
+    console.log('📅 事件数量:', dateEvents.length);
+    
+    // 立即设置内容状态
     setContent(savedContent || '');
     setBackgroundImage(savedBackground || '');
     setEvents(dateEvents);
+    
+    isInitializedRef.current = true;
   }, [date]);
 
-  // 只在初始加载时设置内容，避免光标跳动
+  // 初始化编辑器内容 - 关键修复！
   useEffect(() => {
-    if (editorRef.current && content !== undefined) {
-      // 保存当前选区
-      const selection = window.getSelection();
-      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-      const currentFocus = document.activeElement;
-      
-      // 设置内容
-      editorRef.current.innerHTML = content || '';
-      
-      // 恢复选区
-      if (range && currentFocus === editorRef.current) {
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-      
-      // 更新空状态
-      updateEmptyState();
+    if (!editorRef.current) return;
+    
+    console.log('🎯 初始化编辑器，当前内容状态:', content ? `有内容，长度: ${content.length}` : '空');
+    
+    // 保存当前选区
+    const selection = window.getSelection();
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    const currentFocus = document.activeElement;
+    
+    // 设置编辑器内容
+    editorRef.current.innerHTML = content || '';
+    
+    console.log('✅ 编辑器内容已设置:', editorRef.current.innerHTML.substring(0, 100));
+    
+    // 恢复选区
+    if (range && currentFocus === editorRef.current) {
+      selection.removeAllRanges();
+      selection.addRange(range);
     }
-  }, []); // 只在组件挂载时执行一次
+    
+    // 更新空状态
+    updateEmptyState();
+    
+  }, [content, date]); // 依赖 content 和 date
 
   const updateEmptyState = () => {
     if (editorRef.current) {
       const html = editorRef.current.innerHTML;
-      const isEmpty = !html || html === '<br>' || html === '<div><br></div>';
+      const isEmpty = !html || 
+                     html === '<br>' || 
+                     html === '<div><br></div>' || 
+                     html === '&#8203;' ||
+                     html === '<div>&#8203;</div>';
+      
       if (isEmpty) {
         editorRef.current.classList.add('empty');
+        console.log('📭 编辑器状态: 空');
       } else {
         editorRef.current.classList.remove('empty');
+        console.log('📬 编辑器状态: 有内容');
       }
     }
+  };
+
+  // 从 DOM 更新内容状态 - 修复版本
+  const updateContentFromDOM = () => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML;
+      
+      // 过滤掉零宽空格
+      const cleanContent = newContent.replace(/&#8203;|<\/?div[^>]*>|<\/?br[^>]*>/g, '').trim();
+      
+      console.log('💾 准备保存内容，长度:', newContent.length, '清理后:', cleanContent.length);
+      
+      if (cleanContent) {
+        setContent(newContent);
+        updateEmptyState();
+        const saveResult = storageService.saveDailyContent(date, newContent);
+        console.log('💽 保存结果:', saveResult ? '成功' : '失败', '键名:', `daily-content-${date}`);
+      } else {
+        // 如果内容为空，也保存空内容
+        setContent('');
+        updateEmptyState();
+        storageService.saveDailyContent(date, '');
+        console.log('💽 保存空内容');
+      }
+    }
+  };
+
+  // 内容变化处理 - 立即保存
+  const handleContentChange = () => {
+    if (isComposingRef.current) return;
+    
+    console.log('⌨️ 内容变化触发');
+    // 立即保存，不使用防抖
+    updateContentFromDOM();
+  };
+
+  const handleCompositionStart = () => {
+    isComposingRef.current = true;
+    console.log('🇨🇳 中文输入开始');
+  };
+
+  const handleCompositionEnd = () => {
+    isComposingRef.current = false;
+    console.log('🇨🇳 中文输入结束');
+    updateContentFromDOM();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+      // 立即保存
+      setTimeout(updateContentFromDOM, 10);
+    }
+  };
+
+  const saveContent = () => {
+    updateContentFromDOM();
+    alert('内容已保存！');
+  };
+
+  const handleEditorFocus = () => {
+    if (editorRef.current) {
+      editorRef.current.classList.remove('empty');
+      console.log('🎯 编辑器获得焦点');
+      
+      // 如果只有零宽空格，清空它
+      if (editorRef.current.innerHTML === '&#8203;' || editorRef.current.innerHTML === '<div>&#8203;</div>') {
+        editorRef.current.innerHTML = '';
+        // 确保光标在正确位置
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(editorRef.current);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    }
+  };
+
+  const handleEditorBlur = () => {
+    console.log('👋 编辑器失去焦点');
+    updateEmptyState();
+    updateContentFromDOM(); // 失焦时也保存
   };
 
   const handleImageUpload = (e) => {
@@ -76,9 +182,9 @@ const EventDetailPage = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const imageUrl = reader.result;
+        console.log('🖼️ 图片上传完成，大小:', imageUrl.length);
         
         if (editorRef.current) {
-          // 保存当前选区
           const selection = window.getSelection();
           const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
           
@@ -89,7 +195,6 @@ const EventDetailPage = () => {
           
           if (range) {
             range.insertNode(img);
-            // 在图片后插入一个空格，方便继续输入
             const space = document.createTextNode(' ');
             range.insertNode(space);
             range.collapse(false);
@@ -98,7 +203,8 @@ const EventDetailPage = () => {
             editorRef.current.appendChild(document.createTextNode(' '));
           }
           
-          // 更新内容和状态
+          console.log('✅ 图片插入完成');
+          // 立即保存
           updateContentFromDOM();
         }
       };
@@ -130,6 +236,7 @@ const EventDetailPage = () => {
         const imageUrl = reader.result;
         setBackgroundImage(imageUrl);
         storageService.saveDailyBackground(date, imageUrl);
+        console.log('🎨 背景图片已保存');
       };
       
       reader.onerror = () => {
@@ -139,74 +246,6 @@ const EventDetailPage = () => {
       reader.readAsDataURL(file);
     }
     e.target.value = '';
-  };
-
-  // 从 DOM 更新内容状态
-  const updateContentFromDOM = () => {
-    if (editorRef.current) {
-      const newContent = editorRef.current.innerHTML;
-      setContent(newContent);
-      updateEmptyState();
-      storageService.saveDailyContent(date, newContent);
-    }
-  };
-
-  // 防抖的内容更新
-  const handleContentChange = () => {
-    if (isComposingRef.current) return; // 中文输入法期间不更新
-    
-    requestAnimationFrame(() => {
-      updateContentFromDOM();
-    });
-  };
-
-  const handleCompositionStart = () => {
-    isComposingRef.current = true;
-  };
-
-  const handleCompositionEnd = () => {
-    isComposingRef.current = false;
-    updateContentFromDOM();
-  };
-
-  const handleKeyDown = (e) => {
-    // 防止回车键产生 <div> 包裹，使用 <br> 代替
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      document.execCommand('insertLineBreak');
-    }
-  };
-
-  const saveContent = () => {
-    storageService.saveDailyContent(date, content);
-    alert('内容已保存');
-  };
-
-  const handleEditorFocus = () => {
-    if (editorRef.current) {
-      editorRef.current.classList.remove('empty');
-      
-      // 如果内容为空，确保光标在正确位置
-      if (editorRef.current.innerHTML === '') {
-        // 设置一个零宽空格确保光标可以定位
-        editorRef.current.innerHTML = '&#8203;';
-        const range = document.createRange();
-        const selection = window.getSelection();
-        range.setStart(editorRef.current, 0);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-    }
-  };
-
-  const handleEditorBlur = () => {
-    updateEmptyState();
-    
-    // 清理零宽空格
-    if (editorRef.current && editorRef.current.innerHTML === '&#8203;') {
-      editorRef.current.innerHTML = '';
-    }
   };
 
   const addNewEvent = () => {
@@ -294,6 +333,22 @@ const EventDetailPage = () => {
     return colorMap[type] || '#3498db';
   };
 
+  // 调试函数 - 在控制台检查存储状态
+  const checkStorage = () => {
+    console.log('🔍 存储状态检查:');
+    console.log('当前日期:', date);
+    console.log('存储键:', `daily-content-${date}`);
+    console.log('存储内容:', localStorage.getItem(`daily-content-${date}`));
+    console.log('React状态内容:', content ? `有内容，长度: ${content.length}` : '空');
+    console.log('编辑器内容:', editorRef.current?.innerHTML.substring(0, 200));
+  };
+
+  // 在组件挂载时检查存储
+  useEffect(() => {
+    console.log('🚀 EventDetailPage 组件挂载');
+    checkStorage();
+  }, []);
+
   return (
     <div className="event-detail-page">
       <div className="detail-header">
@@ -301,9 +356,18 @@ const EventDetailPage = () => {
           ← 返回日历
         </button>
         <h1 className="detail-title">{moment(date).format('YYYY年MM月DD日 dddd')}</h1>
-        <button className="save-btn" onClick={saveContent}>
-          💾 保存内容
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button 
+            className="toolbar-btn" 
+            onClick={checkStorage}
+            style={{ background: '#6c757d', fontSize: '12px', padding: '5px 10px' }}
+          >
+            🔍 调试
+          </button>
+          <button className="save-btn" onClick={saveContent}>
+            💾 保存内容
+          </button>
+        </div>
       </div>
       
       <div className="detail-content">
