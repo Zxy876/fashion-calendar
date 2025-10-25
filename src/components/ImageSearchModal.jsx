@@ -1,9 +1,10 @@
 // src/components/ImageSearchModal.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { unsplashService } from '../services/unsplashService';
+import { storageService } from '../utils/storage'; // 添加这行导入
 import './ImageSearchModal.css';
 
-const ImageSearchModal = ({ date, onClose, onImageSelect, onImageSave }) => {
+const ImageSearchModal = ({ date, onClose, onImageSelect, onImageSave, onSetAsBackground }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -131,6 +132,12 @@ const ImageSearchModal = ({ date, onClose, onImageSelect, onImageSave }) => {
                       >
                         收藏
                       </button>
+                      <button 
+                        className="bg-btn"
+                        onClick={() => onSetAsBackground && onSetAsBackground(image.url)}
+                      >
+                        背景
+                      </button>
                     </div>
                     <div className="image-info">
                       <span className="author">by {image.author}</span>
@@ -167,10 +174,17 @@ const ImageSearchModal = ({ date, onClose, onImageSelect, onImageSave }) => {
                         使用
                       </button>
                       <button 
+                        className="bg-btn"
+                        onClick={() => onSetAsBackground && onSetAsBackground(image.url)}
+                      >
+                        背景
+                      </button>
+                      <button 
                         className="delete-btn"
                         onClick={() => {
                           storageService.deleteDailyImage(date, image.id);
-                          onImageSave(image); // 触发刷新
+                          // 触发父组件刷新
+                          onImageSave(image);
                         }}
                       >
                         删除
