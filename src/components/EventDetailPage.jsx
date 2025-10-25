@@ -13,6 +13,7 @@ const EventDetailPage = () => {
   const [events, setEvents] = useState([]);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const editorRef = useRef(null);
+  const isComposingRef = useRef(false); // 用于中文输入法
 
   // 加载该日期的事件数据
   useEffect(() => {
@@ -25,29 +26,48 @@ const EventDetailPage = () => {
     setEvents(dateEvents);
   }, [date]);
 
-  // 初始化编辑器内容
+  // 只在初始加载时设置内容，避免光标跳动
   useEffect(() => {
     if (editorRef.current && content !== undefined) {
-      if (content) {
-        editorRef.current.innerHTML = content;
-        editorRef.current.classList.remove('empty');
-      } else {
-        editorRef.current.innerHTML = '';
+      // 保存当前选区
+      const selection = window.getSelection();
+      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+      const currentFocus = document.activeElement;
+      
+      // 设置内容
+      editorRef.current.innerHTML = content || '';
+      
+      // 恢复选区
+      if (range && currentFocus === editorRef.current) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      
+      // 更新空状态
+      updateEmptyState();
+    }
+  }, []); // 只在组件挂载时执行一次
+
+  const updateEmptyState = () => {
+    if (editorRef.current) {
+      const html = editorRef.current.innerHTML;
+      const isEmpty = !html || html === '<br>' || html === '<div><br></div>';
+      if (isEmpty) {
         editorRef.current.classList.add('empty');
+      } else {
+        editorRef.current.classList.remove('empty');
       }
     }
-  }, [content]);
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // 验证文件类型
       if (!file.type.startsWith('image/')) {
         alert('请选择图片文件');
         return;
       }
 
-      // 验证文件大小（限制为 5MB）
       if (file.size > 5 * 1024 * 1024) {
         alert('图片大小不能超过 5MB');
         return;
@@ -58,31 +78,28 @@ const EventDetailPage = () => {
         const imageUrl = reader.result;
         
         if (editorRef.current) {
+          // 保存当前选区
           const selection = window.getSelection();
           const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
           
           const img = document.createElement('img');
           img.src = imageUrl;
           img.alt = "uploaded";
-          img.style.maxWidth = "100%";
-          img.style.borderRadius = "8px";
-          img.style.margin = "10px 0";
           img.className = "uploaded-image";
           
           if (range) {
             range.insertNode(img);
+            // 在图片后插入一个空格，方便继续输入
+            const space = document.createTextNode(' ');
+            range.insertNode(space);
             range.collapse(false);
           } else {
             editorRef.current.appendChild(img);
+            editorRef.current.appendChild(document.createTextNode(' '));
           }
           
-          // 移除空状态
-          editorRef.current.classList.remove('empty');
-          
-          // 触发内容更新
-          const newContent = editorRef.current.innerHTML;
-          setContent(newContent);
-          storageService.saveDailyContent(date, newContent);
+          // 更新内容和状态
+          updateContentFromDOM();
         }
       };
       
@@ -124,40 +141,71 @@ const EventDetailPage = () => {
     e.target.value = '';
   };
 
+  // 从 DOM 更新内容状态
+  const updateContentFromDOM = () => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML;
+      setContent(newContent);
+      updateEmptyState();
+      storageService.saveDailyContent(date, newContent);
+    }
+  };
+
+  // 防抖的内容更新
+  const handleContentChange = () => {
+    if (isComposingRef.current) return; // 中文输入法期间不更新
+    
+    requestAnimationFrame(() => {
+      updateContentFromDOM();
+    });
+  };
+
+  const handleCompositionStart = () => {
+    isComposingRef.current = true;
+  };
+
+  const handleCompositionEnd = () => {
+    isComposingRef.current = false;
+    updateContentFromDOM();
+  };
+
+  const handleKeyDown = (e) => {
+    // 防止回车键产生 <div> 包裹，使用 <br> 代替
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+    }
+  };
+
   const saveContent = () => {
     storageService.saveDailyContent(date, content);
     alert('内容已保存');
   };
 
-  const handleContentChange = (e) => {
-    const newContent = e.target.innerHTML;
-    setContent(newContent);
-    
-    // 更新空状态
-    if (editorRef.current) {
-      if (newContent === '<br>' || newContent === '') {
-        editorRef.current.classList.add('empty');
-      } else {
-        editorRef.current.classList.remove('empty');
-      }
-    }
-    
-    // 自动保存
-    storageService.saveDailyContent(date, newContent);
-  };
-
   const handleEditorFocus = () => {
     if (editorRef.current) {
       editorRef.current.classList.remove('empty');
+      
+      // 如果内容为空，确保光标在正确位置
+      if (editorRef.current.innerHTML === '') {
+        // 设置一个零宽空格确保光标可以定位
+        editorRef.current.innerHTML = '&#8203;';
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.setStart(editorRef.current, 0);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
     }
   };
 
   const handleEditorBlur = () => {
-    if (editorRef.current) {
-      const currentContent = editorRef.current.innerHTML;
-      if (!currentContent || currentContent === '<br>') {
-        editorRef.current.classList.add('empty');
-      }
+    updateEmptyState();
+    
+    // 清理零宽空格
+    if (editorRef.current && editorRef.current.innerHTML === '&#8203;') {
+      editorRef.current.innerHTML = '';
     }
   };
 
@@ -178,14 +226,12 @@ const EventDetailPage = () => {
     const startTime = prompt('请输入开始时间 (HH:mm)', '09:00');
     const endTime = prompt('请输入结束时间 (HH:mm)', '10:00');
 
-    // 验证时间格式
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!startTime || !endTime || !timeRegex.test(startTime) || !timeRegex.test(endTime)) {
       alert('时间格式不正确，请使用 HH:mm 格式 (00:00 - 23:59)');
       return;
     }
 
-    // 验证时间逻辑
     const start = new Date(date + 'T' + startTime + ':00');
     const end = new Date(date + 'T' + endTime + ':00');
     
@@ -194,7 +240,6 @@ const EventDetailPage = () => {
       return;
     }
 
-    // 检查时间冲突
     const hasConflict = events.some(event => {
       const eventStart = new Date(event.start);
       const eventEnd = new Date(event.end);
@@ -342,6 +387,9 @@ const EventDetailPage = () => {
           onInput={handleContentChange}
           onFocus={handleEditorFocus}
           onBlur={handleEditorBlur}
+          onKeyDown={handleKeyDown}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
           style={{ 
             backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
             backgroundSize: 'cover',

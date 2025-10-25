@@ -238,7 +238,59 @@
   margin: 10px 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
- 
+/* 优化编辑器空状态 */
+.content-editor.empty {
+  background-color: #f8f9fa !important;
+}
+
+.content-editor.empty:focus {
+  background-color: white !important;
+}
+
+/* 上传的图片样式 */
+.uploaded-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 10px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.uploaded-image:hover {
+  transform: scale(1.02);
+}
+
+/* 删除按钮样式 */
+.delete-event-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.delete-event-btn:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 改进事件类型标签 */
+.event-type {
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 60px;
+  text-align: center;
+  white-space: nowrap;
+} 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .event-detail-page {
