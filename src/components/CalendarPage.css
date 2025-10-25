@@ -464,6 +464,7 @@ body {
   letter-spacing: 0.5px;
   font-weight: 600;
 }
+
 /* 增强版事件小点效果 */
 .has-events {
   position: relative;
@@ -498,42 +499,20 @@ body {
 
 /* 不同类型事件的小点颜色 */
 .has-events.work::after {
-  background-color: #3498db; /* 蓝色 */
+  background-color: #3498db;
 }
 
 .has-events.meeting::after {
-  background-color: #9b59b6; /* 紫色 */
+  background-color: #9b59b6;
 }
 
 .has-events.personal::after {
-  background-color: #2ecc71; /* 绿色 */
+  background-color: #2ecc71;
 }
 
 .has-events.urgent::after {
-  background-color: #e74c3c; /* 红色 */
+  background-color: #e74c3c;
 }
-/* 响应式设计 */
-@media (max-width: 1024px) {
-  .calendar-content {
-    grid-template-columns: 1fr;
-  }
-  
-  .calendar-sidebar {
-    border-left: none;
-    border-top: 1px solid var(--border-color);
-  }
-  
-  .custom-toolbar {
-    flex-direction: column;
-    gap: 15px;
-    align-items: stretch;
-  }
-  
-  .toolbar-left, .toolbar-right {
-    justify-content: center;
-  }
-}
-/* 正确位置 - 在媒体查询外面 */
 
 /* 日期预览卡片样式 */
 .date-preview-card {
@@ -652,32 +631,57 @@ body {
   background-color: rgba(52, 152, 219, 0.1) !important;
 }
 
-/* 然后才是媒体查询 */
-@media (max-width: 768px) {
-  .calendar-page {
-    padding: 10px;
-  }
-  
-  .header-content {
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
-  }
-  
-  .toolbar-left, .toolbar-right {
-    flex-wrap: wrap;
-  }
-  
-  .date-display {
-    order: -1;
-    width: 100%;
-    justify-content: center;
-    margin-bottom: 10px;
-  }
+/* 图片标记指示器 */
+.image-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 5;
 }
-/* src/components/CalendarPage.css 更新 - 在现有媒体查询基础上增强 */
 
-/* 增强现有媒体查询 */
+/* 有图片的日期单元格 */
+.has-images .rbc-date-cell button {
+  background: rgba(155, 89, 182, 0.1) !important;
+}
+
+/* 图片搜索按钮悬停效果 */
+.image-search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(155, 89, 182, 0.4);
+}
+
+/* 更新悬停预览卡片，添加图片信息 */
+.date-preview-card .preview-images {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.preview-images-title {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+
+.preview-image-count {
+  background: #9b59b6;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  margin-left: 5px;
+}
+
+/* 响应式设计 */
 @media (max-width: 1024px) {
   .calendar-content {
     grid-template-columns: 1fr;
