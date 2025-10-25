@@ -333,7 +333,7 @@ const CalendarPage = () => {
       <div className="calendar-container">
         <div className="calendar-header">
           <div className="header-content">
-            <h1 className="app-title">时尚日历</h1>
+            <h1 className="app-title">时尚日历calendar</h1>
             <div className="user-info">
               <div className="user-avatar">用</div>
               <span className="user-name">用户</span>
