@@ -1,4 +1,4 @@
-// src/components/EventDetailPage.jsx
+// src/components/EventDetailPage.jsx 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import moment from 'moment';
