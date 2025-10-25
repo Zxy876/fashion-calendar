@@ -1,4 +1,4 @@
-// src/components/CalendarPage.jsx
+// src/components/CalendarPage.jsx (修复版)
 import React, { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './CalendarPage.css';
 import { storageService } from '../utils/storage';
+import ImageSearchModal from './ImageSearchModal';
 
 // 设置中文本地化
 moment.locale('zh-cn');
@@ -16,22 +17,21 @@ const CalendarPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState('month');
   const [events, setEvents] = useState([]);
-  
-  // 添加悬停状态
   const [hoveredDate, setHoveredDate] = useState(null);
   const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
   
-  // 从本地存储加载事件数据
+  // 新增状态
+  const [showImageSearch, setShowImageSearch] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+
   useEffect(() => {
     const savedEvents = storageService.getEvents();
     
-    // 如果没有事件数据，初始化一些示例数据
     if (savedEvents.length === 0) {
       const currentYear = new Date().getFullYear();
       const currentMonth = new Date().getMonth();
       const currentDay = new Date().getDate();
       
-      // 确保使用 Date 对象而不是字符串
       const sampleEvents = [
         {
           id: 1,
@@ -66,7 +66,6 @@ const CalendarPage = () => {
       sampleEvents.forEach(event => storageService.addEvent(event));
       setEvents(sampleEvents);
     } else {
-      // 确保从存储中加载的事件数据中的日期是 Date 对象
       const processedEvents = savedEvents.map(event => ({
         ...event,
         start: new Date(event.start),
@@ -76,7 +75,6 @@ const CalendarPage = () => {
     }
   }, []);
 
-  // 日期导航
   const navigateDate = (direction) => {
     let newDate;
     if (view === 'month') {
@@ -157,7 +155,6 @@ const CalendarPage = () => {
     navigate(`/day/${dateStr}`);
   };
 
-  // 添加新事件
   const handleAddEvent = () => {
     const title = prompt('请输入事件标题:');
     if (!title) return;
@@ -178,7 +175,6 @@ const CalendarPage = () => {
     };
 
     const savedEvent = storageService.addEvent(newEvent);
-    // 确保新事件的日期是 Date 对象
     const eventWithDateObjects = {
       ...savedEvent,
       start: new Date(savedEvent.start),
@@ -187,21 +183,30 @@ const CalendarPage = () => {
     setEvents(prev => [...prev, eventWithDateObjects]);
   };
 
-  // 自定义日期单元格包装器
-  const CustomDayWrapper = ({ children, value }) => {
-    return (
-      <div 
-        onMouseEnter={(e) => handleDayMouseEnter(value, e)}
-        onMouseLeave={handleDayMouseLeave}
-        onClick={() => handleSelectSlot({ start: value, end: value })}
-        style={{ cursor: 'pointer', height: '100%' }}
-      >
-        {children}
-      </div>
-    );
+  // 新增：处理图片搜索
+  const handleImageSearch = (date) => {
+    setSelectedDate(date);
+    setShowImageSearch(true);
   };
 
-  // 渲染悬停预览卡片
+  // 新增：处理图片选择（设置为背景）
+  const handleImageSelect = (imageUrl) => {
+    if (selectedDate) {
+      storageService.saveDailyBackground(selectedDate, imageUrl);
+      alert('背景图片设置成功！');
+    }
+  };
+
+  // 新增：处理图片保存
+  const handleImageSave = (imageData) => {
+    if (selectedDate) {
+      storageService.saveDailyImage(selectedDate, imageData);
+      // 触发重新渲染以更新标记
+      setEvents([...events]);
+    }
+  };
+
+  // 渲染悬停预览卡片 - 修复：移到正确位置
   const renderHoverPreview = () => {
     if (!hoveredDate) return null;
 
@@ -234,7 +239,39 @@ const CalendarPage = () => {
     );
   };
 
-  // 自定义工具栏
+  // 更新：自定义日期单元格包装器 - 添加图片标记
+  const CustomDayWrapper = ({ children, value }) => {
+    const hasEvents = storageService.getEventsByDate(value).length > 0;
+    const hasImages = storageService.hasDailyImages(moment(value).format('YYYY-MM-DD'));
+    
+    return (
+      <div 
+        onMouseEnter={(e) => handleDayMouseEnter(value, e)}
+        onMouseLeave={handleDayMouseLeave}
+        onClick={() => handleSelectSlot({ start: value, end: value })}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          handleImageSearch(moment(value).format('YYYY-MM-DD'));
+        }}
+        style={{ 
+          cursor: 'pointer', 
+          height: '100%',
+          position: 'relative'
+        }}
+        className={`custom-date-cell ${hasEvents ? 'has-events' : ''} ${hasImages ? 'has-images' : ''}`}
+      >
+        {children}
+        {/* 添加图片标记 */}
+        {hasImages && (
+          <div className="image-indicator" title="有保存的图片">
+            🖼️
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 更新：自定义工具栏 - 添加图片搜索按钮
   const CustomToolbar = () => {
     const currentMoment = moment(currentDate);
     
@@ -259,6 +296,24 @@ const CalendarPage = () => {
             <button className={`view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => handleViewChange('week')}>周</button>
             <button className={`view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => handleViewChange('day')}>日</button>
           </div>
+          
+          {/* 新增图片搜索按钮 */}
+          <button 
+            className="image-search-btn"
+            onClick={() => handleImageSearch(moment().format('YYYY-MM-DD'))}
+            style={{
+              background: 'linear-gradient(135deg, #9b59b6, #8e44ad)',
+              color: 'white',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              transition: 'all 0.3s'
+            }}
+          >
+            🖼️ 搜图
+          </button>
           
           <button className="add-event-btn" onClick={handleAddEvent}>
             + 添加事件
@@ -326,7 +381,6 @@ const CalendarPage = () => {
                 popup
                 step={60}
                 showMultiDayTimes
-                // 添加格式配置来修复兼容性问题
                 formats={{
                   dateFormat: 'D',
                   dayFormat: 'D',
@@ -405,6 +459,16 @@ const CalendarPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* 添加图片搜索模态框 */}
+      {showImageSearch && (
+        <ImageSearchModal
+          date={selectedDate}
+          onClose={() => setShowImageSearch(false)}
+          onImageSelect={handleImageSelect}
+          onImageSave={handleImageSave}
+        />
+      )}
       
       {/* 添加悬停预览卡片 */}
       {renderHoverPreview()}
